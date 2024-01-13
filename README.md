@@ -1,4 +1,4 @@
-# waypoint-based-destructible-terrain
+# waypoint-based-destructible-terrain-techdemo
 
 ## Idea
 
