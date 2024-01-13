@@ -25,6 +25,7 @@ BUTTON_HGT = 40
 
 # Variables that change over time.
 pygame.init()
+pygame.display.set_caption('waypoint based destructible terrain')
 screen = pygame.display.set_mode(WINDOW_SIZE)
 running = True
 clock = pygame.time.Clock()
