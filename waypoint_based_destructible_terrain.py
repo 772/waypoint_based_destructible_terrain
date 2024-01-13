@@ -18,6 +18,7 @@ EARTH_COLOR = (200, 130, 110)
 TUNNEL_COLOR = (100, 30, 10)
 SPEED_WALKING = 2
 SPEED_DIGGING = 1
+SPEED_JUMPING = 8
 BUTTON_X = 10
 BUTTON_Y = 10
 BUTTON_WDT = 270
@@ -25,7 +26,7 @@ BUTTON_HGT = 40
 
 # Variables that change over time.
 pygame.init()
-pygame.display.set_caption('waypoint based destructible terrain')
+pygame.display.set_caption("waypoint based destructible terrain")
 screen = pygame.display.set_mode(WINDOW_SIZE)
 running = True
 clock = pygame.time.Clock()
@@ -37,16 +38,46 @@ class Action(Enum):
     DIGGING = auto()
 
 
+class Direction(Enum):
+    LEFT = auto()
+    RIGHT = auto()
+
+
 class Player:
     action: Action
+    direction: Direction
     x: float
     y: float
     x_speed: float
     y_speed: float
 
+    def command_jump_left(self):
+        player1.direction = Direction.LEFT
+        player1.action = Action.FALLING
+        player1.x_speed = -SPEED_WALKING * 2
+        player1.y_speed = -SPEED_JUMPING
+
+    def command_jump_right(self):
+        player1.direction = Direction.RIGHT
+        player1.action = Action.FALLING
+        player1.x_speed = SPEED_WALKING * 2
+        player1.y_speed = -SPEED_JUMPING
+
+    def command_walk_left(self):
+        player1.direction = Direction.LEFT
+        player1.x_speed = -SPEED_WALKING
+
+    def command_walk_right(self):
+        player1.direction = Direction.RIGHT
+        player1.x_speed = SPEED_WALKING
+
+    def command_stop(self):
+        player1.x_speed = 0
+
 
 player1 = Player()
 player1.action = Action.WALKING
+player1.direction = Direction.LEFT
 player1.x = 100
 player1.y = 200
 player1.x_speed = 0
@@ -97,27 +128,30 @@ while running:
         if player1.y_speed > 0 and tuple(
             pygame.Surface.get_at(screen, (player1.x, player1.y + 1))[:3]
         ) not in [SKY_COLOR, TUNNEL_COLOR]:
+            player1.x_speed = 0
             player1.y_speed = 0
             player1.action = Action.WALKING
 
     # Keyboard input.
     if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_LEFT:
-            player1.x_speed = -SPEED_WALKING
-            if player1.action == Action.DIGGING:
-                player1.x_speed = -SPEED_DIGGING
-        elif event.key == pygame.K_RIGHT:
-            player1.x_speed = SPEED_WALKING
-            if player1.action == Action.DIGGING:
-                player1.x_speed = SPEED_DIGGING
+        if event.key == pygame.K_LEFT and player1.action == Action.DIGGING:
+            player1.x_speed = -SPEED_DIGGING
+        if event.key == pygame.K_LEFT and player1.action == Action.WALKING:
+            player1.command_walk_left()
+        if event.key == pygame.K_RIGHT and player1.action == Action.DIGGING:
+            player1.x_speed = SPEED_DIGGING
+        if event.key == pygame.K_RIGHT and player1.action == Action.WALKING:
+            player1.command_walk_right()
         elif event.key == pygame.K_UP and player1.action == Action.WALKING:
-            player1.action = Action.FALLING
-            player1.y_speed = -10
+            if player1.direction == Direction.LEFT:
+                player1.command_jump_left()
+            else:
+                player1.command_jump_right()
     if event.type == pygame.KEYUP:
-        if event.key == pygame.K_LEFT:
-            player1.x_speed = 0
-        elif event.key == pygame.K_RIGHT:
-            player1.x_speed = 0
+        if (
+            event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT
+        ) and player1.action == Action.WALKING:
+            player1.command_stop()
 
     # Draw earth.
     pygame.draw.rect(screen, EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 600))
