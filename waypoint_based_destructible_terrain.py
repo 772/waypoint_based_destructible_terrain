@@ -16,13 +16,15 @@ WINDOW_SIZE = (1000, 800)
 SKY_COLOR = (215, 212, 255)
 EARTH_COLOR = (200, 130, 110)
 TUNNEL_COLOR = (100, 30, 10)
-SPEED_WALKING = 2
+SPEED_WALKING = 3
 SPEED_DIGGING = 1
 SPEED_JUMPING = 8
 BUTTON_X = 10
 BUTTON_Y = 10
 BUTTON_WDT = 270
 BUTTON_HGT = 40
+TUNNEL_HGT = 40
+PLAYER_HGT = 20
 
 # Variables that change over time.
 pygame.init()
@@ -30,6 +32,16 @@ pygame.display.set_caption("waypoint based destructible terrain")
 screen = pygame.display.set_mode(WINDOW_SIZE)
 running = True
 clock = pygame.time.Clock()
+tunnels = []
+
+
+class DirectionDigging(Enum):
+    LEFT_UP = auto()
+    LEFT = auto()
+    LEFT_DOWN = auto()
+    RIGHT_DOWN = auto()
+    RIGHT = auto()
+    RIGHT_UP = auto()
 
 
 class Action(Enum):
@@ -54,13 +66,13 @@ class Player:
     def command_jump_left(self):
         player1.direction = Direction.LEFT
         player1.action = Action.FALLING
-        player1.x_speed = -SPEED_WALKING * 2
+        player1.x_speed = -SPEED_WALKING
         player1.y_speed = -SPEED_JUMPING
 
     def command_jump_right(self):
         player1.direction = Direction.RIGHT
         player1.action = Action.FALLING
-        player1.x_speed = SPEED_WALKING * 2
+        player1.x_speed = SPEED_WALKING
         player1.y_speed = -SPEED_JUMPING
 
     def command_walk_left(self):
@@ -74,6 +86,23 @@ class Player:
     def command_stop(self):
         player1.x_speed = 0
 
+
+class Tunnel:
+    start_x: float
+    start_y: float
+    end_x: float
+    end_y: float
+    # direction: DirectionDigging
+
+    def __init__(self, start_x, start_y, end_x, end_y):
+        self.start_x = start_x
+        self.start_y = start_y
+        self.end_x = end_x
+        self.end_y = end_y
+
+
+tunnels.append(Tunnel(200, 200, 400, 400))
+tunnels.append(Tunnel(400, 200, 200, 400))
 
 player1 = Player()
 player1.action = Action.WALKING
@@ -131,6 +160,56 @@ while running:
             player1.x_speed = 0
             player1.y_speed = 0
             player1.action = Action.WALKING
+        # Hit the ceiling with the head?
+        if player1.y_speed < 0 and (
+            tuple(
+                pygame.Surface.get_at(screen, (player1.x - 5, player1.y - PLAYER_HGT))[
+                    :3
+                ]
+            )
+            not in [SKY_COLOR, TUNNEL_COLOR]
+            or tuple(
+                pygame.Surface.get_at(screen, (player1.x + 5, player1.y - PLAYER_HGT))[
+                    :3
+                ]
+            )
+            not in [SKY_COLOR, TUNNEL_COLOR]
+        ):
+            player1.x_speed = 0
+            player1.y_speed = 0
+
+    if player1.action == Action.WALKING:
+        if player1.x_speed != 0:
+            """
+            # Player walking against wall? TODO: Not working.
+            if player1.x_speed > 0 and tuple(
+                pygame.Surface.get_at(screen, (player1.x + 6, player1.y - PLAYER_HGT / 2))[
+                    :3
+                ]
+            ) not in [SKY_COLOR, TUNNEL_COLOR]:
+                player1.x_speed = 0
+            if player1.x_speed < 0 and tuple(
+                pygame.Surface.get_at(screen, (player1.x - 6, player1.y - PLAYER_HGT / 2))[
+                    :3
+                ]
+            ) not in [SKY_COLOR, TUNNEL_COLOR]:
+                player1.x_speed = 0
+            """
+            # Is the player walking uphill or downhill?
+            while tuple(
+                pygame.Surface.get_at(screen, (player1.x, player1.y + 1))[:3]
+            ) in [
+                SKY_COLOR,
+                TUNNEL_COLOR,
+            ]:
+                player1.y += 1
+            while tuple(
+                pygame.Surface.get_at(screen, (player1.x, player1.y))[:3]
+            ) not in [
+                SKY_COLOR,
+                TUNNEL_COLOR,
+            ]:
+                player1.y -= 1
 
     # Keyboard input.
     if event.type == pygame.KEYDOWN:
@@ -156,9 +235,38 @@ while running:
     # Draw earth.
     pygame.draw.rect(screen, EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 600))
 
+    # Draw tunnels.
+    for tunnel in tunnels:
+        pygame.draw.line(
+            screen,
+            TUNNEL_COLOR,
+            (tunnel.start_x, tunnel.start_y - TUNNEL_HGT / 2),
+            (tunnel.end_x, tunnel.end_y - TUNNEL_HGT / 2),
+            width=TUNNEL_HGT,
+        )
+        pygame.draw.circle(
+            screen,
+            TUNNEL_COLOR,
+            (tunnel.end_x, tunnel.end_y - TUNNEL_HGT / 2),
+            TUNNEL_HGT / 2,
+        )
+        if debug_mode:
+            pygame.draw.circle(
+                screen,
+                (255, 255, 255),
+                (tunnel.start_x, tunnel.start_y),
+                3,
+            )
+            pygame.draw.circle(
+                screen,
+                (255, 255, 255),
+                (tunnel.end_x, tunnel.end_y),
+                3,
+            )
+
     # Draw the sky.
     pygame.draw.rect(screen, SKY_COLOR, (0, 0, WINDOW_SIZE[0], 200))
-
+    
     # Button for debug mode.
     pygame.draw.rect(screen, (0, 0, 0), (BUTTON_X, BUTTON_Y, BUTTON_WDT, BUTTON_HGT))
     pygame.draw.rect(
