@@ -6,4 +6,4 @@ For destructible 2D landscapes, you would normally use a approach with a huge gr
 
 ## Warning
 
-This is in a _very_ early development stage. Nothing of the concept is implemented, yet.
+This is in a _very_ early development stage. Very less of the concept is implemented, yet.
