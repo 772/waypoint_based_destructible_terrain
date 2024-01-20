@@ -9,7 +9,7 @@ import math
 import random
 from enum import Enum, auto
 
-# Third party libraries.
+# Third-party libraries.
 import pygame
 
 # Constants.
@@ -35,6 +35,16 @@ running = True
 clock = pygame.time.Clock()
 tunnels = []
 players = []
+flags = []
+debug_mode = False
+smallfont = pygame.font.SysFont("Corbel", 35)
+smallfont2 = pygame.font.SysFont("Corbel", 22)
+text = smallfont.render("Turn on debug mode", True, (0, 0, 0))
+text2 = smallfont2.render(
+    "Move via arrow keys. Start/end digging via left or right Control. Dig a tunnel to the red flag to make the AI move between the red flags.",
+    True,
+    (0, 0, 0),
+)
 
 
 class DirectionDigging(Enum):
@@ -53,12 +63,27 @@ class Action(Enum):
 
 
 class Direction(Enum):
+    """The direction the player is facing to."""
+
     LEFT = auto()
     RIGHT = auto()
+
 
 class PlayerType(Enum):
     HUMAN = auto()
     AI = auto()
+
+
+class Flag:
+    x: float
+    y: float
+    color: []
+
+    def __init__(self, x, y, color):
+        self.x = x
+        self.y = y
+        self.color = color
+
 
 class Player:
     action: Action
@@ -70,7 +95,9 @@ class Player:
     player_type: PlayerType
 
     def __init__(self, x, y, player_type):
-        self.action = Action.FALLING
+        self.action = (
+            Action.FALLING
+        )  # The default aciton is FALLING because the player may spawn mid-air.
         self.direction = Direction.LEFT
         self.x = x
         self.y = y
@@ -78,30 +105,46 @@ class Player:
         self.y_speed = 0
         self.player_type = player_type
 
+    def command_start_digging(self):
+        """Jump to the left."""
+        if self.action == Action.WALKING or self.action == Action.DIGGING:
+            self.action = Action.DIGGING
+            tunnels.append(Tunnel(self.x, self.y, self.x, self.y))
+
     def command_jump_left(self):
-        self.direction = Direction.LEFT
-        self.action = Action.FALLING
-        self.x_speed = -SPEED_WALKING
-        self.y_speed = -SPEED_JUMPING
+        """Jump to the left."""
+        if self.action == Action.WALKING:
+            self.direction = Direction.LEFT
+            self.action = Action.FALLING
+            self.x_speed = -SPEED_WALKING
+            self.y_speed = -SPEED_JUMPING
 
     def command_jump_right(self):
-        self.direction = Direction.RIGHT
-        self.action = Action.FALLING
-        self.x_speed = SPEED_WALKING
-        self.y_speed = -SPEED_JUMPING
+        """Jump to the right."""
+        if self.action == Action.WALKING:
+            self.direction = Direction.RIGHT
+            self.action = Action.FALLING
+            self.x_speed = SPEED_WALKING
+            self.y_speed = -SPEED_JUMPING
 
     def command_walk_left(self):
+        """Walk to the left."""
         self.direction = Direction.LEFT
         self.x_speed = -SPEED_WALKING
 
     def command_walk_right(self):
+        """Walk to the right."""
         self.direction = Direction.RIGHT
         self.x_speed = SPEED_WALKING
 
     def command_stop(self):
-        self.x_speed = 0
+        """If the player is walking, stop him."""
+        if self.action == Action.WALKING or self.action == Action.DIGGING:
+            self.action = Action.WALKING
+            self.x_speed = 0
 
     def is_there_solid_material(self, x, y) -> bool:
+        """Returns True if there is earth at the given offset position."""
         return tuple(pygame.Surface.get_at(screen, (self.x + x, self.y + y))[:3]) in [
             EARTH_COLOR
         ]
@@ -121,36 +164,27 @@ class Tunnel:
         self.end_y = end_y
 
 
-tunnels.append(Tunnel(200, 200, 400, 400))
-tunnels.append(Tunnel(400, 200, 200, 400))
+# Place objects.
+def place_objects():
+    flags.append(Flag(100, 200, (255, 0, 0)))  # Red flag.
+    flags.append(Flag(700, 400, (255, 0, 0)))  # Red flag.
+    flags.append(Flag(100, 400, (255, 255, 0)))  # Yellow flag.
+    flags.append(Flag(300, 600, (255, 255, 0)))  # Yellow flag.
+    flags.append(Flag(300, 400, (0, 255, 0)))  # Green flag.
+    flags.append(Flag(100, 600, (0, 255, 0)))  # Green flag.
+    tunnels.append(Tunnel(100, 400, 300, 600))  # Tunnel connecting yellow flags.
+    tunnels.append(Tunnel(300, 400, 100, 600))  # Tunnel connecting green flags.
+    players.append(Player(500, 200, PlayerType.HUMAN))  # Human player.
+    players.append(Player(100, 200, PlayerType.AI))  # AI patrolling red flags.
+    players.append(Player(100, 400, PlayerType.AI))  # AI patrolling yellow flags.
+    players.append(Player(300, 400, PlayerType.AI))  # AI patrolling green flags.
 
-players.append(Player(100,100, PlayerType.HUMAN))
-players.append(Player(200,100, PlayerType.AI))
-players.append(Player(300,100, PlayerType.AI))
-players.append(Player(400,100, PlayerType.AI))
-debug_mode = False
-smallfont = pygame.font.SysFont("Corbel", 35)
-text = smallfont.render("Turn on debug mode", True, (0, 0, 0))
+
+place_objects()
 
 while running:
     # Limit the game to 36 FPS.
     clock.tick(36)
-
-    # Mouse events.
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mouse = pygame.mouse.get_pos()
-            if (
-                BUTTON_X <= mouse[0] <= BUTTON_X + BUTTON_WDT
-                and BUTTON_Y <= mouse[1] <= BUTTON_Y + BUTTON_HGT
-            ):
-                debug_mode = not debug_mode
-                if debug_mode:
-                    text = smallfont.render("Turn off debug mode", True, (0, 0, 0))
-                else:
-                    text = smallfont.render("Turn on debug mode", True, (0, 0, 0))
 
     # Apply movement to all players.
     for player in players:
@@ -196,53 +230,124 @@ while running:
             ):
                 player.x_speed = 0
                 player.y_speed = 0
-
-        if player.player_type == PlayerType.HUMAN:
-            # Keyboard input for player 1.
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT and player.action == Action.DIGGING:
-                    player.x_speed = -SPEED_DIGGING
-                if event.key == pygame.K_LEFT and player.action == Action.WALKING:
-                    player.command_walk_left()
-                if event.key == pygame.K_RIGHT and player.action == Action.DIGGING:
-                    player.x_speed = SPEED_DIGGING
-                if event.key == pygame.K_RIGHT and player.action == Action.WALKING:
-                    player.command_walk_right()
-                elif event.key == pygame.K_UP and player.action == Action.WALKING:
-                    if player.direction == Direction.LEFT:
-                        player.command_jump_left()
-                    else:
-                        player.command_jump_right()
-            if event.type == pygame.KEYUP:
-                if (
-                    event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT
-                ) and player.action == Action.WALKING:
-                    player.command_stop()
-            if player.action == Action.WALKING:
-                a = False
-                if player.x_speed != 0:
+        if player.action == Action.WALKING:
+            a = False
+            if player.x_speed != 0:
+                if not player.is_there_solid_material(0, 1):
+                    player.y += 1
                     if not player.is_there_solid_material(0, 1):
                         player.y += 1
                         if not player.is_there_solid_material(0, 1):
                             player.y += 1
                             if not player.is_there_solid_material(0, 1):
-                                player.y += 1
-                                if not player.is_there_solid_material(0, 1):
-                                    player.action = Action.FALLING
-                        a = True
-                    while (
-                        player.is_there_solid_material(-5, -2)
-                        or player.is_there_solid_material(5, -2)
-                    ) and a == False:
-                        player.y -= 1
+                                player.action = Action.FALLING
+                    a = True
+                while (
+                    player.is_there_solid_material(-5, -2)
+                    or player.is_there_solid_material(5, -2)
+                ) and a == False:
+                    player.y -= 1
+        if player.action == Action.DIGGING:
+            tunnels[-1].end_x = player.x
+            tunnels[-1].end_y = player.y
+
+        if player.player_type == PlayerType.HUMAN:
+            # Keyboard and mouse input for player 1.
+            event_list = pygame.event.get()
+            for event in event_list:
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse = pygame.mouse.get_pos()
+                    if (
+                        BUTTON_X <= mouse[0] <= BUTTON_X + BUTTON_WDT
+                        and BUTTON_Y <= mouse[1] <= BUTTON_Y + BUTTON_HGT
+                    ):
+                        debug_mode = not debug_mode
+                        if debug_mode:
+                            text = smallfont.render(
+                                "Turn off debug mode", True, (0, 0, 0)
+                            )
+                        else:
+                            text = smallfont.render(
+                                "Turn on debug mode", True, (0, 0, 0)
+                            )
+                if event.type == pygame.KEYDOWN:
+                    if (
+                        event.key == pygame.K_RCTRL or event.key == pygame.K_LCTRL
+                    ) and player.action == Action.WALKING:
+                        player.command_start_digging()
+                    elif (
+                        event.key == pygame.K_RCTRL or event.key == pygame.K_LCTRL
+                    ) and player.action == Action.DIGGING:
+                        player.command_stop()
+                    elif event.key == pygame.K_LEFT and player.action == Action.WALKING:
+                        player.command_walk_left()
+                    elif (
+                        event.key == pygame.K_RIGHT and player.action == Action.WALKING
+                    ):
+                        player.command_walk_right()
+                    elif (
+                        event.key == pygame.K_RIGHT and player.action == Action.DIGGING
+                    ):
+                        player.command_start_digging()
+                        player.direction = Direction.RIGHT
+                        player.x_speed = SPEED_DIGGING
+                        player.y_speed = 0
+                    elif event.key == pygame.K_LEFT and player.action == Action.DIGGING:
+                        player.command_start_digging()
+                        player.direction = Direction.LEFT
+                        player.x_speed = -SPEED_DIGGING
+                        player.y_speed = 0
+                    elif event.key == pygame.K_UP and player.action == Action.DIGGING:
+                        player.command_start_digging()
+                        player.x_speed = (
+                            SPEED_DIGGING
+                            if player.direction == Direction.RIGHT
+                            else -SPEED_DIGGING
+                        )
+                        player.y_speed = -SPEED_DIGGING // 2
+                    elif event.key == pygame.K_DOWN and player.action == Action.DIGGING:
+                        player.command_start_digging()
+                        player.x_speed = (
+                            SPEED_DIGGING
+                            if player.direction == Direction.RIGHT
+                            else -SPEED_DIGGING
+                        )
+                        player.y_speed = SPEED_DIGGING
+                    elif event.key == pygame.K_UP and player.action == Action.WALKING:
+                        if player.direction == Direction.LEFT:
+                            player.command_jump_left()
+                        else:
+                            player.command_jump_right()
+                if event.type == pygame.KEYUP:
+                    if (
+                        event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT
+                    ) and player.action == Action.WALKING:
+                        player.command_stop()
+                    if event.key == pygame.K_LEFT and player.action == Action.DIGGING:
+                        player.x_speed = 0
+                    if event.key == pygame.K_RIGHT and player.action == Action.DIGGING:
+                        player.x_speed = 0
+                    if event.key == pygame.K_UP and player.action == Action.DIGGING:
+                        player.x_speed = 0
+                        player.y_speed = 0
+                    if event.key == pygame.K_DOWN and player.action == Action.DIGGING:
+                        player.x_speed = 0
+                        player.y_speed = 0
+
         if player.player_type == PlayerType.AI:
             # Movement for AI players. This is only for testing the movements.
-            if random.randint(0,100) == 0:
+            if random.randint(0, 100) == 0:
                 player.command_walk_right()
-            elif random.randint(0,100) == 0:
+            elif random.randint(0, 100) == 0:
                 player.command_walk_left()
-            elif random.randint(0,50) == 0:
+            elif random.randint(0, 50) == 0:
                 player.command_stop()
+            elif random.randint(0, 100) == 0:
+                player.command_jump_left()
+            elif random.randint(0, 100) == 0:
+                player.command_jump_right()
 
     # Draw earth.
     pygame.draw.rect(screen, EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 600))
@@ -262,7 +367,8 @@ while running:
             (tunnel.end_x, tunnel.end_y - TUNNEL_HGT / 2),
             TUNNEL_HGT / 2,
         )
-        if debug_mode:
+    if debug_mode:
+        for tunnel in tunnels:
             pygame.draw.circle(
                 screen,
                 (255, 255, 255),
@@ -281,10 +387,26 @@ while running:
         (BUTTON_X + 1, BUTTON_Y + 1, BUTTON_WDT - 2, BUTTON_HGT - 2),
     )
     screen.blit(text, (BUTTON_X + 10, BUTTON_Y + 10))
+    screen.blit(text2, (BUTTON_X + 10, BUTTON_Y + 50))
+
+    # Draw flags.
+    for flag in flags:
+        pygame.draw.polygon(
+            screen,
+            flag.color,
+            (
+                (flag.x, flag.y),
+                (flag.x, flag.y - 25),
+                (flag.x + 10, flag.y - 20),
+                (flag.x + 2, flag.y - 15),
+                (flag.x + 2, flag.y),
+            ),
+            0,
+        )
 
     # Draw player.
-    player_color = (255, 0, 0)
     for player in players:
+        player_color = (255, 0, 0)
         if player.action == Action.DIGGING:
             player_color = (255, 255, 0)
         pygame.draw.polygon(
