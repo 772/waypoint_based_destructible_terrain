@@ -6,6 +6,7 @@ Requirements: ```pip install pygame```
 
 # Standard libraries.
 import math
+import random
 from enum import Enum, auto
 
 # Third party libraries.
@@ -33,6 +34,7 @@ screen = pygame.display.set_mode(WINDOW_SIZE)
 running = True
 clock = pygame.time.Clock()
 tunnels = []
+players = []
 
 
 class DirectionDigging(Enum):
@@ -54,6 +56,9 @@ class Direction(Enum):
     LEFT = auto()
     RIGHT = auto()
 
+class PlayerType(Enum):
+    HUMAN = auto()
+    AI = auto()
 
 class Player:
     action: Action
@@ -62,6 +67,16 @@ class Player:
     y: float
     x_speed: float
     y_speed: float
+    player_type: PlayerType
+
+    def __init__(self, x, y, player_type):
+        self.action = Action.FALLING
+        self.direction = Direction.LEFT
+        self.x = x
+        self.y = y
+        self.x_speed = 0
+        self.y_speed = 0
+        self.player_type = player_type
 
     def command_jump_left(self):
         self.direction = Direction.LEFT
@@ -109,13 +124,10 @@ class Tunnel:
 tunnels.append(Tunnel(200, 200, 400, 400))
 tunnels.append(Tunnel(400, 200, 200, 400))
 
-player1 = Player()
-player1.action = Action.WALKING
-player1.direction = Direction.LEFT
-player1.x = 100
-player1.y = 200
-player1.x_speed = 0
-player1.y_speed = 0
+players.append(Player(100,100, PlayerType.HUMAN))
+players.append(Player(200,100, PlayerType.AI))
+players.append(Player(300,100, PlayerType.AI))
+players.append(Player(400,100, PlayerType.AI))
 debug_mode = False
 smallfont = pygame.font.SysFont("Corbel", 35)
 text = smallfont.render("Turn on debug mode", True, (0, 0, 0))
@@ -140,89 +152,97 @@ while running:
                 else:
                     text = smallfont.render("Turn on debug mode", True, (0, 0, 0))
 
-    # Apply speed if there are no walls.
-    if player1.x_speed > 0:
-        if player1.is_there_solid_material(7, 0) and player1.is_there_solid_material(
-            7, -20
-        ):
-            player1.x_speed = 0
-        else:
-            player1.x += player1.x_speed
-    elif player1.x_speed < 0:
-        if player1.is_there_solid_material(-7, 0) and player1.is_there_solid_material(
-            -7, -20
-        ):
-            player1.x_speed = 0
-        else:
-            player1.x += player1.x_speed
-    player1.y += player1.y_speed
-
-    # The player should not leave the screen.
-    if player1.x < 0:
-        player1.x = 0
-    elif player1.x >= WINDOW_SIZE[0]:
-        player1.x = WINDOW_SIZE[0] - 1
-    if player1.y < 0:
-        player1.y = 0
-    elif player1.y >= WINDOW_SIZE[1]:
-        player1.y = WINDOW_SIZE[1] - 1
-
-    # Is the player falling?
-    if player1.action == Action.FALLING:
-        # Gravitation.
-        if player1.y_speed < 10:
-            player1.y_speed += 1
-        # Hit the ground?
-        if player1.y_speed > 0 and player1.is_there_solid_material(0, 1):
-            player1.x_speed = 0
-            player1.y_speed = 0
-            player1.action = Action.WALKING
-        # Hit the ceiling with the head?
-        if player1.y_speed < 0 and (
-            player1.is_there_solid_material(-5, -PLAYER_HGT)
-            or player1.is_there_solid_material(5, -PLAYER_HGT)
-        ):
-            player1.x_speed = 0
-            player1.y_speed = 0
-
-    # Keyboard input.
-    if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_LEFT and player1.action == Action.DIGGING:
-            player1.x_speed = -SPEED_DIGGING
-        if event.key == pygame.K_LEFT and player1.action == Action.WALKING:
-            player1.command_walk_left()
-        if event.key == pygame.K_RIGHT and player1.action == Action.DIGGING:
-            player1.x_speed = SPEED_DIGGING
-        if event.key == pygame.K_RIGHT and player1.action == Action.WALKING:
-            player1.command_walk_right()
-        elif event.key == pygame.K_UP and player1.action == Action.WALKING:
-            if player1.direction == Direction.LEFT:
-                player1.command_jump_left()
+    # Apply movement to all players.
+    for player in players:
+        # Apply speed if there are no walls.
+        if player.x_speed > 0:
+            if player.is_there_solid_material(7, 0) and player.is_there_solid_material(
+                7, -20
+            ):
+                player.x_speed = 0
             else:
-                player1.command_jump_right()
-    if event.type == pygame.KEYUP:
-        if (
-            event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT
-        ) and player1.action == Action.WALKING:
-            player1.command_stop()
+                player.x += player.x_speed
+        elif player.x_speed < 0:
+            if player.is_there_solid_material(-7, 0) and player.is_there_solid_material(
+                -7, -20
+            ):
+                player.x_speed = 0
+            else:
+                player.x += player.x_speed
+        player.y += player.y_speed
+        # The player should not leave the screen.
+        if player.x < 10:
+            player.x = 10
+        elif player.x >= WINDOW_SIZE[0] - 10:
+            player.x = WINDOW_SIZE[0] - 11
+        if player.y < 0:
+            player.y = 0
+        elif player.y >= WINDOW_SIZE[1]:
+            player.y = WINDOW_SIZE[1] - 1
+        # Is the player falling?
+        if player.action == Action.FALLING:
+            # Gravitation.
+            if player.y_speed < 10:
+                player.y_speed += 1
+            # Hit the ground?
+            if player.y_speed > 0 and player.is_there_solid_material(0, 1):
+                player.x_speed = 0
+                player.y_speed = 0
+                player.action = Action.WALKING
+            # Hit the ceiling with the head?
+            if player.y_speed < 0 and (
+                player.is_there_solid_material(-5, -PLAYER_HGT)
+                or player.is_there_solid_material(5, -PLAYER_HGT)
+            ):
+                player.x_speed = 0
+                player.y_speed = 0
 
-    if player1.action == Action.WALKING:
-        a = False
-        if player1.x_speed != 0:
-            if not player1.is_there_solid_material(0, 1):
-                player1.y += 1
-                if not player1.is_there_solid_material(0, 1):
-                    player1.y += 1
-                    if not player1.is_there_solid_material(0, 1):
-                        player1.y += 1
-                        if not player1.is_there_solid_material(0, 1):
-                            player1.action = Action.FALLING
-                a = True
-            while (
-                player1.is_there_solid_material(-5, -2)
-                or player1.is_there_solid_material(5, -2)
-            ) and a == False:
-                player1.y -= 1
+        if player.player_type == PlayerType.HUMAN:
+            # Keyboard input for player 1.
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT and player.action == Action.DIGGING:
+                    player.x_speed = -SPEED_DIGGING
+                if event.key == pygame.K_LEFT and player.action == Action.WALKING:
+                    player.command_walk_left()
+                if event.key == pygame.K_RIGHT and player.action == Action.DIGGING:
+                    player.x_speed = SPEED_DIGGING
+                if event.key == pygame.K_RIGHT and player.action == Action.WALKING:
+                    player.command_walk_right()
+                elif event.key == pygame.K_UP and player.action == Action.WALKING:
+                    if player.direction == Direction.LEFT:
+                        player.command_jump_left()
+                    else:
+                        player.command_jump_right()
+            if event.type == pygame.KEYUP:
+                if (
+                    event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT
+                ) and player.action == Action.WALKING:
+                    player.command_stop()
+            if player.action == Action.WALKING:
+                a = False
+                if player.x_speed != 0:
+                    if not player.is_there_solid_material(0, 1):
+                        player.y += 1
+                        if not player.is_there_solid_material(0, 1):
+                            player.y += 1
+                            if not player.is_there_solid_material(0, 1):
+                                player.y += 1
+                                if not player.is_there_solid_material(0, 1):
+                                    player.action = Action.FALLING
+                        a = True
+                    while (
+                        player.is_there_solid_material(-5, -2)
+                        or player.is_there_solid_material(5, -2)
+                    ) and a == False:
+                        player.y -= 1
+        if player.player_type == PlayerType.AI:
+            # Movement for AI players. This is only for testing the movements.
+            if random.randint(0,100) == 0:
+                player.command_walk_right()
+            elif random.randint(0,100) == 0:
+                player.command_walk_left()
+            elif random.randint(0,50) == 0:
+                player.command_stop()
 
     # Draw earth.
     pygame.draw.rect(screen, EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 600))
@@ -264,21 +284,22 @@ while running:
 
     # Draw player.
     player_color = (255, 0, 0)
-    if player1.action == Action.DIGGING:
-        player_color = (255, 255, 0)
-    pygame.draw.polygon(
-        screen,
-        player_color,
-        (
-            (player1.x + 3, player1.y),
-            (player1.x + 2, player1.y - 18),
-            (player1.x - 2, player1.y - 18),
-            (player1.x - 3, player1.y),
-            (player1.x - 5, player1.y - 20),
-            (player1.x + 5, player1.y - 20),
-        ),
-        0,
-    )
+    for player in players:
+        if player.action == Action.DIGGING:
+            player_color = (255, 255, 0)
+        pygame.draw.polygon(
+            screen,
+            player_color,
+            (
+                (player.x + 3, player.y),
+                (player.x + 2, player.y - 18),
+                (player.x - 2, player.y - 18),
+                (player.x - 3, player.y),
+                (player.x - 5, player.y - 20),
+                (player.x + 5, player.y - 20),
+            ),
+            0,
+        )
 
     # Update the display.
     pygame.display.update()
