@@ -4,6 +4,9 @@ A techdemo showing an AI friendly destructible terrain for side-scrolling games.
 
 For destructible 2D landscapes, you would normally use a approach with a huge grid of single pixels (bitmap) or a polygon-based approach. Both approaches can be advanced using techniques like marching squares or quadtrees. However, both approaches have their difficulties with AI players.
 
-## Warning
+## Build
 
-This is in a _very_ early development stage. Very less of the concept is implemented, yet.
+```
+pip install pygame
+python waypoint_based_destructible_terrain.py
+```
