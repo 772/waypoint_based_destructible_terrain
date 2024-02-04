@@ -6,7 +6,7 @@ Why? In the context of destructible two-dimensional (2D) landscapes, conventiona
 
 ## Preview
 
-TODO.mp4
+TODO.mp4 or TODO.gif
 
 ## Build
 
