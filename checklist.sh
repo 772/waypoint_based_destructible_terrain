@@ -1,1 +1,1 @@
-black waypoint_based_destructible_terrain.py 
+black .
