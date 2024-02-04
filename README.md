@@ -1,8 +1,12 @@
 # waypoint_based_destructible_terrain
 
-A techdemo showing an AI friendly destructible terrain for side-scrolling games. It works by using a waypoint net that is both used for AI players and rendering the landscape.
+waypoint_based_destructible_terrain is a small techdemo showcasing an artificial intelligence (AI)-compatible destructible terrain designed for side-scrolling games. The functionality is achieved through the implementation of a dynamic waypoint network, utilized concurrently for AI player navigation and landscape rendering.
 
-For destructible 2D landscapes, you would normally use a approach with a huge grid of single pixels (bitmap) or a polygon-based approach. Both approaches can be advanced using techniques like marching squares or quadtrees. However, both approaches have their difficulties with AI players.
+Why? In the context of destructible two-dimensional (2D) landscapes, conventional methodologies involve the utilization of either a vast grid comprising individual pixels (bitmap) or a polygon-based approach. Techniques such as marching squares or quadtrees are often employed to enhance the sophistication of these approaches. However, both approaches (bitmaps and polygons) encounter challenges when accommodating AI players within the gaming environment.
+
+## Preview
+
+TODO.mp4
 
 ## Build
 
