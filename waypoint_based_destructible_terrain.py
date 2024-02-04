@@ -143,6 +143,24 @@ class Player:
             pygame.Surface.get_at(screen, (int(self.x + x), int(self.y + y)))[:3]
         ) not in [TUNNEL_COLOR, (255, 0, 0), (255, 255, 0), (0, 255, 0), (255,255,255)]
 
+    def draw(self, screen):
+        player_color = (255, 0, 0)
+        if self.action == Action.DIGGING:
+            player_color = (255, 255, 0)
+        pygame.draw.polygon(
+            screen,
+            player_color,
+            (
+                (self.x + 3, self.y),
+                (self.x + 2, self.y - 18),
+                (self.x - 2, self.y - 18),
+                (self.x - 3, self.y),
+                (self.x - 5, self.y - 20),
+                (self.x + 5, self.y - 20),
+            ),
+            0,
+        )
+
 
 class Flag:
     """Visual checkpoint."""
@@ -155,7 +173,20 @@ class Flag:
         self.x = x
         self.y = y
         self.color = color
-
+        
+    def draw(self, screen):
+        pygame.draw.polygon(
+            screen,
+            self.color,
+            (
+                (self.x, self.y),
+                (self.x, self.y - 25),
+                (self.x + 10, self.y - 20),
+                (self.x + 2, self.y - 15),
+                (self.x + 2, self.y),
+            ),
+            0,
+        )
 
 class Tunnel:
     """Visual hole in the earth."""
@@ -171,7 +202,7 @@ class Tunnel:
         self.start_y = start_y
         self.end_x = end_x
         self.end_y = end_y
-        self.direction = TunnelDirection.FLAT  # Default value.
+        self.direction = TunnelDirection.FLAT # Default value.
         if start_y < end_y:
             if start_x < end_x:
                 self.direction = TunnelDirection.RIGHTDOWN
@@ -632,10 +663,10 @@ def main():
                 ) and not player.is_there_solid_material(screen, 0, 1):
                     player.action = Action.FALLING
 
-        # Draw earth.
-        pygame.draw.rect(screen, EARTH_COLOR, (0, 0, WINDOW_SIZE[0], 800))
-
-        # Draw tunnels.
+        # Drawing.
+        pygame.draw.rect(screen, (240,240,250), (0, 0, WINDOW_SIZE[0], 100))
+        pygame.draw.rect(screen, (0,0,0), (0, 99, WINDOW_SIZE[0], 100))
+        pygame.draw.rect(screen, EARTH_COLOR, (0, 100, WINDOW_SIZE[0], 700))
         for tunnel in tunnels: # Using the design pattern "Iterator".
             tunnel.draw(screen)
         if debug_mode:
@@ -647,8 +678,6 @@ def main():
                     (tunnel.end_x, tunnel.end_y),
                 )
                 i += 1
-
-        # Button for debug mode.
         pygame.draw.rect(
             screen,
             (0, 0, 0),
@@ -665,11 +694,7 @@ def main():
             ),
         )
         screen.blit(text, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y + 10))
-
-        # Text for task.
         screen.blit(text2, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y + 50))
-
-        # Button for reset.
         pygame.draw.rect(
             screen,
             (0, 0, 0),
@@ -686,40 +711,10 @@ def main():
             ),
         )
         screen.blit(text_reset, (BUTTON_RESET_X + 10, BUTTON_RESET_Y + 10))
-
-        # Draw flags.
         for flag in flags: # Using the design pattern "Iterator".
-            pygame.draw.polygon(
-                screen,
-                flag.color,
-                (
-                    (flag.x, flag.y),
-                    (flag.x, flag.y - 25),
-                    (flag.x + 10, flag.y - 20),
-                    (flag.x + 2, flag.y - 15),
-                    (flag.x + 2, flag.y),
-                ),
-                0,
-            )
-
-        # Draw player.
+            flag.draw(screen)
         for player in players: # Using the design pattern "Iterator".
-            player_color = (255, 0, 0)
-            if player.action == Action.DIGGING:
-                player_color = (255, 255, 0)
-            pygame.draw.polygon(
-                screen,
-                player_color,
-                (
-                    (player.x + 3, player.y),
-                    (player.x + 2, player.y - 18),
-                    (player.x - 2, player.y - 18),
-                    (player.x - 3, player.y),
-                    (player.x - 5, player.y - 20),
-                    (player.x + 5, player.y - 20),
-                ),
-                0,
-            )
+            player.draw(screen)
 
         # Update the display.
         pygame.display.update()
