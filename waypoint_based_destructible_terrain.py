@@ -118,19 +118,16 @@ class Player:
         deleted."""
         amount_of_tunnels = len(tunnels)
         if self.action == Action.DIGGING and amount_of_tunnels > 2:
-            if tunnels[-1].start_x == tunnels[-1].end_x:  # Check for useless tunnels.
-                """
-                pass
-                # TODO Why doesn't whis work???
-                tunnels = tunnels[:-2] # Delete latest tunnel.
-                del waypoint_net[str(amount_of_tunnels - 1)] # Delete the two latest waypoints.
-                del waypoint_net[str(amount_of_tunnels - 2)] # Delete the two latest waypoints.
-                for key in waypoint_net:
+            if (
+                tunnels[-1].start_x == tunnels[-1].end_x
+            ):  # Check for tunnels with zero length.
+                tunnels = tunnels[:-1]  # Delete latest tunnel.
+                del waypoint_net[
+                    str(amount_of_tunnels - 1)
+                ]  # Delete the two latest waypoints.
+                for key in waypoint_net:  # Delete every reference to the new waypoint.
                     if amount_of_tunnels - 1 in waypoint_net[key]:
                         waypoint_net[key].remove(amount_of_tunnels - 1)
-                    if amount_of_tunnels - 2 in waypoint_net[key]:
-                        waypoint_net[key].remove(amount_of_tunnels - 2)
-                """
             else:
                 # Check if new connections are finished.
                 tunnel_id = 0
@@ -640,7 +637,11 @@ def main():
                     )
                     if len(path) > 0:
                         next_node = path[1]
-                        if tunnels[next_node].end_x > player.x_position and tunnels[next_node].end_x > tunnels[player.last_visited_tunnel].end_x:
+                        if (
+                            tunnels[next_node].end_x > player.x_position
+                            and tunnels[next_node].end_x
+                            > tunnels[player.last_visited_tunnel].end_x
+                        ):
                             if (
                                 player.x_speed == 0
                                 and tunnels[player.last_visited_tunnel].end_y
@@ -649,7 +650,11 @@ def main():
                             ):
                                 player.command_jump_right()
                             player.command_walk_right()
-                        elif tunnels[next_node].end_x < player.x_position and tunnels[next_node].end_x < tunnels[player.last_visited_tunnel].end_x:
+                        elif (
+                            tunnels[next_node].end_x < player.x_position
+                            and tunnels[next_node].end_x
+                            < tunnels[player.last_visited_tunnel].end_x
+                        ):
                             if (
                                 player.x_speed == 0
                                 and tunnels[player.last_visited_tunnel].end_y
