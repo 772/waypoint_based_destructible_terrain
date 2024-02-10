@@ -117,8 +117,7 @@ class Player:
         by using the corresponding key, this is called to make sure unneccesary tunnels get
         deleted."""
         amount_of_tunnels = len(tunnels)
-        # print("There are now", amount_of_tunnels, "tunnels")
-        if self.action == Action.DIGGING and len(tunnels) > 2:
+        if self.action == Action.DIGGING and amount_of_tunnels > 2:
             if tunnels[-1].start_x == tunnels[-1].end_x:  # Check for useless tunnels.
                 """
                 pass
@@ -136,8 +135,6 @@ class Player:
                 # Check if new connections are finished.
                 tunnel_id = 0
                 for tunnel in tunnels[:-2]:
-                    # print("Tunnel end position =",tunnel.end_x, tunnel.end_y)
-                    # print("Player position =", self.x_position, self.y_position)
                     margin = TUNNEL_HGT
                     if (
                         tunnel.end_x - margin
@@ -643,7 +640,7 @@ def main():
                     )
                     if len(path) > 0:
                         next_node = path[1]
-                        if tunnels[next_node].end_x > player.x_position:
+                        if tunnels[next_node].end_x > player.x_position and tunnels[next_node].end_x > tunnels[player.last_visited_tunnel].end_x:
                             if (
                                 player.x_speed == 0
                                 and tunnels[player.last_visited_tunnel].end_y
@@ -652,7 +649,7 @@ def main():
                             ):
                                 player.command_jump_right()
                             player.command_walk_right()
-                        elif tunnels[next_node].end_x < player.x_position:
+                        elif tunnels[next_node].end_x < player.x_position and tunnels[next_node].end_x < tunnels[player.last_visited_tunnel].end_x:
                             if (
                                 player.x_speed == 0
                                 and tunnels[player.last_visited_tunnel].end_y
