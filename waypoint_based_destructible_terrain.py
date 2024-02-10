@@ -16,7 +16,9 @@ import pygame
 WINDOW_SIZE = (1000, 800)
 EARTH_COLOR = (200, 130, 110)  # Brownish color.
 TUNNEL_COLOR = (100, 30, 10)  # Should be darker than earth color.
-SPEED_WALKING: float = 2.0  # Determines how fast he player is walking/jumping to left or right.
+SPEED_WALKING: float = (
+    2.0  # Determines how fast he player is walking/jumping to left or right.
+)
 SPEED_DIGGING: float = (
     0.8  # Should be much lower than SPEEDWALKING to make it more realistic.
 )
@@ -115,11 +117,12 @@ class Player:
         by using the corresponding key, this is called to make sure unneccesary tunnels get
         deleted."""
         amount_of_tunnels = len(tunnels)
-        #print("There are now", amount_of_tunnels, "tunnels")
+        # print("There are now", amount_of_tunnels, "tunnels")
         if self.action == Action.DIGGING and len(tunnels) > 2:
-            if tunnels[-1].start_x == tunnels[-1].end_x: # Check for useless tunnels.
+            if tunnels[-1].start_x == tunnels[-1].end_x:  # Check for useless tunnels.
                 """
                 pass
+                # TODO Why doesn't whis work???
                 tunnels = tunnels[:-2] # Delete latest tunnel.
                 del waypoint_net[str(amount_of_tunnels - 1)] # Delete the two latest waypoints.
                 del waypoint_net[str(amount_of_tunnels - 2)] # Delete the two latest waypoints.
@@ -133,14 +136,20 @@ class Player:
                 # Check if new connections are finished.
                 tunnel_id = 0
                 for tunnel in tunnels[:-2]:
-                    #print("Tunnel end position =",tunnel.end_x, tunnel.end_y)
-                    #print("Player position =", self.x_position, self.y_position)
+                    # print("Tunnel end position =",tunnel.end_x, tunnel.end_y)
+                    # print("Player position =", self.x_position, self.y_position)
                     margin = TUNNEL_HGT
-                    if tunnel.end_x - margin <= self.x_position <= tunnel.end_x + margin and tunnel.end_y - margin <= self.y_position <= tunnel.end_y + margin:
+                    if (
+                        tunnel.end_x - margin
+                        <= self.x_position
+                        <= tunnel.end_x + margin
+                        and tunnel.end_y - margin
+                        <= self.y_position
+                        <= tunnel.end_y + margin
+                    ):
                         # Combine the two waypoints close to each other.
                         waypoint_net[str(tunnel_id)].append(amount_of_tunnels - 1)
-                        waypoint_net[str(amount_of_tunnels - 1)].append(tunnel_id)                        
-                        print("Kombiniere:", tunnel_id, amount_of_tunnels - 1)
+                        waypoint_net[str(amount_of_tunnels - 1)].append(tunnel_id)
                     tunnel_id += 1
         return (tunnels, waypoint_net)
 
@@ -527,7 +536,9 @@ def main():
                         elif (
                             event.key in (pygame.K_RCTRL, pygame.K_LCTRL)
                         ) and player.action == Action.DIGGING:
-                            (tunnels, waypoint_net) = player.command_stop_digging(tunnels, waypoint_net)
+                            (tunnels, waypoint_net) = player.command_stop_digging(
+                                tunnels, waypoint_net
+                            )
                             player.command_stop()
                         elif (
                             event.key == pygame.K_LEFT
