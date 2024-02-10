@@ -728,7 +728,24 @@ def main():
 
 def weightless_breadth_first_search(graph, start, end) -> []:
     """Finds the a list of nodes between two nodes. The function does not care about the distance between nodes (weights)."""
-    # TODO.
+    queue = [[start]]
+    visited = []
+    # Return an empty list if the goal is already there.
+    if start == end:
+        return []
+    while queue:
+        path = queue.pop(0)
+        node = path[-1]
+        if node not in visited:
+            for connected_nodes in graph[
+                str(node)
+            ]:  # Using the design pattern "Iterator".
+                path_next = list(path)
+                path_next.append(connected_nodes)
+                queue.append(path_next)
+                if connected_nodes == end:
+                    return [*path_next]
+            visited.append(node)
     # Return an empty list if there was no connection.
     return []
 
