@@ -110,6 +110,46 @@ class Player:
             # The player visits the new waypoint.
             self.last_visited_tunnel = new_tunnel_id
 
+    def command_stop_digging(self, tunnels, waypoint_net):
+        """Not every time the player stops digging, this is called. Only if the player stops digging
+        by using the corresponding key, this is called to make sure unneccesary tunnels get
+        deleted."""
+        amount_of_tunnels = len(tunnels)
+        #print("There are now", amount_of_tunnels, "tunnels")
+        if self.action == Action.DIGGING and len(tunnels) > 2:
+            if tunnels[-1].start_x == tunnels[-1].end_x: # Check for useless tunnels.
+                """
+                pass
+                tunnels = tunnels[:-2] # Delete latest tunnel.
+                del waypoint_net[str(amount_of_tunnels - 1)] # Delete the two latest waypoints.
+                del waypoint_net[str(amount_of_tunnels - 2)] # Delete the two latest waypoints.
+                for key in waypoint_net:
+                    if amount_of_tunnels - 1 in waypoint_net[key]:
+                        waypoint_net[key].remove(amount_of_tunnels - 1)
+                    if amount_of_tunnels - 2 in waypoint_net[key]:
+                        waypoint_net[key].remove(amount_of_tunnels - 2)
+                """
+            else:
+                # Check if new connections are finished.
+                tunnel_id = 0
+                for tunnel in tunnels[:-2]:
+                    #print("Tunnel end position =",tunnel.end_x, tunnel.end_y)
+                    #print("Player position =", self.x_position, self.y_position)
+                    margin = TUNNEL_HGT
+                    if tunnel.end_x - margin <= self.x_position <= tunnel.end_x + margin and tunnel.end_y - margin <= self.y_position <= tunnel.end_y + margin:
+                        # Combine the two waypoints close to each other.
+                        waypoint_net[str(tunnel_id)].append(amount_of_tunnels - 1)
+                        waypoint_net[str(amount_of_tunnels - 1)].append(tunnel_id)                        
+                        print("Kombiniere:", tunnel_id, amount_of_tunnels - 1)
+                    tunnel_id += 1
+        return (tunnels, waypoint_net)
+
+    def command_stop(self):
+        """If the player is walking, stop him."""
+        if self.action in (Action.WALKING, Action.DIGGING):
+            self.action = Action.WALKING
+            self.x_speed = 0
+
     def command_jump_left(self):
         """Jump to the left."""
         if self.action == Action.WALKING:
@@ -135,12 +175,6 @@ class Player:
         """Walk to the right."""
         self.direction = Direction.RIGHT
         self.x_speed = SPEED_WALKING
-
-    def command_stop(self):
-        """If the player is walking, stop him."""
-        if self.action in (Action.WALKING, Action.DIGGING):
-            self.action = Action.WALKING
-            self.x_speed = 0
 
     def is_there_solid_material(
         self, screen, x_position: float, y_position: float
@@ -493,6 +527,7 @@ def main():
                         elif (
                             event.key in (pygame.K_RCTRL, pygame.K_LCTRL)
                         ) and player.action == Action.DIGGING:
+                            (tunnels, waypoint_net) = player.command_stop_digging(tunnels, waypoint_net)
                             player.command_stop()
                         elif (
                             event.key == pygame.K_LEFT
