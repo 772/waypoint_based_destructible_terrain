@@ -776,7 +776,11 @@ def main():
                 if not player.is_there_solid_material(
                     screen, 0, 4
                 ) and not player.is_there_solid_material(screen, 0, 1):
+                    (tunnels, waypoint_net) = player.command_stop_digging(
+                        tunnels, waypoint_net
+                    )
                     player.action = Action.FALLING
+                    
 
         # Drawing.
         pygame.draw.rect(screen, (240, 240, 250), (0, 0, WINDOW_SIZE[0], 100))
