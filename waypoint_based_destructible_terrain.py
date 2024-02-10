@@ -60,13 +60,6 @@ class Direction(Enum):
     RIGHT = auto()
 
 
-class PlayerType(Enum):
-    """Used by the class Player."""
-
-    HUMAN = auto()
-    AI = auto()
-
-
 class Player:
     """Player."""
 
@@ -76,11 +69,10 @@ class Player:
     y: float
     x_speed: float
     y_speed: float
-    player_type: PlayerType
     patrol_between_tunnels: []
     last_visited_tunnel: int
 
-    def __init__(self, x, y, player_type):
+    def __init__(self, x, y):
         self.action = (
             Action.FALLING
         )  # The default action is FALLING because the player may spawn mid-air.
@@ -89,7 +81,6 @@ class Player:
         self.y = y
         self.x_speed = 0
         self.y_speed = 0
-        self.player_type = player_type
         self.patrol_between_tunnels = []
         self.last_visited_tunnel = 0
 
@@ -141,7 +132,13 @@ class Player:
         """Returns True if there is earth at the given offset position."""
         return tuple(
             pygame.Surface.get_at(screen, (int(self.x + x), int(self.y + y)))[:3]
-        ) not in [TUNNEL_COLOR, (255, 0, 0), (255, 255, 0), (0, 255, 0), (255,255,255)]
+        ) not in [
+            TUNNEL_COLOR,
+            (255, 0, 0),
+            (255, 255, 0),
+            (0, 255, 0),
+            (255, 255, 255),
+        ]
 
     def draw(self, screen):
         player_color = (255, 0, 0)
@@ -173,7 +170,7 @@ class Flag:
         self.x = x
         self.y = y
         self.color = color
-        
+
     def draw(self, screen):
         pygame.draw.polygon(
             screen,
@@ -187,6 +184,7 @@ class Flag:
             ),
             0,
         )
+
 
 class Tunnel:
     """Visual hole in the earth."""
@@ -202,7 +200,7 @@ class Tunnel:
         self.start_y = start_y
         self.end_x = end_x
         self.end_y = end_y
-        self.direction = TunnelDirection.FLAT # Default value.
+        self.direction = TunnelDirection.FLAT  # Default value.
         if start_y < end_y:
             if start_x < end_x:
                 self.direction = TunnelDirection.RIGHTDOWN
@@ -331,6 +329,14 @@ class Tunnel:
             )
 
 
+class HumanPlayer(Player):
+    pass
+
+
+class AIPlayer(Player):
+    pass
+
+
 def main():
     pygame.init()
     pygame.display.set_caption("waypoint based destructible terrain")
@@ -400,14 +406,14 @@ def main():
     waypoint_net["10"] = [9]
 
     # Place players.
-    players.append(Player(500, 200, PlayerType.HUMAN))  # Human player.
-    players.append(Player(700, 400, PlayerType.AI))  # AI patrolling red flags.
+    players.append(HumanPlayer(500, 200))  # Human player.
+    players.append(AIPlayer(700, 400))  # AI patrolling red flags.
     players[-1].patrol_between_tunnels = [0, 3]
     players[-1].last_visited_tunnel = 3
-    players.append(Player(100, 400, PlayerType.AI))  # AI patrolling yellow flags.
+    players.append(AIPlayer(100, 400))  # AI patrolling yellow flags.
     players[-1].patrol_between_tunnels = [6, 4]
     players[-1].last_visited_tunnel = 4
-    players.append(Player(300, 400, PlayerType.AI))  # AI patrolling green flags.
+    players.append(AIPlayer(300, 400))  # AI patrolling green flags.
     players[-1].patrol_between_tunnels = [10, 7]
     players[-1].last_visited_tunnel = 7
 
@@ -417,11 +423,11 @@ def main():
         # Limit the AI actions even more to reduce the number of computations.
         ai_timer = ai_timer - 1 if ai_timer > 0 else AI_TIMER
 
-        for player in players: # Using the design pattern "Iterator".
+        for player in players:  # Using the design pattern "Iterator".
             # Keyboard and mouse input for human players.
-            if player.player_type == PlayerType.HUMAN:
+            if type(player) == HumanPlayer:
                 event_list = pygame.event.get()
-                for event in event_list: # Using the design pattern "Iterator".
+                for event in event_list:  # Using the design pattern "Iterator".
                     if event.type == pygame.QUIT:
                         exit()
                     if event.type == pygame.MOUSEBUTTONDOWN:
@@ -554,7 +560,7 @@ def main():
             if debug_mode:
                 break
 
-            if player.player_type == PlayerType.AI:
+            if type(player) == AIPlayer:
                 # Does the AI have a patrol task?
                 if ai_timer < AI_TIMER and len(player.patrol_between_tunnels) > 1:
                     path = weightless_breadth_first_search(
@@ -664,14 +670,14 @@ def main():
                     player.action = Action.FALLING
 
         # Drawing.
-        pygame.draw.rect(screen, (240,240,250), (0, 0, WINDOW_SIZE[0], 100))
-        pygame.draw.rect(screen, (0,0,0), (0, 99, WINDOW_SIZE[0], 100))
+        pygame.draw.rect(screen, (240, 240, 250), (0, 0, WINDOW_SIZE[0], 100))
+        pygame.draw.rect(screen, (0, 0, 0), (0, 99, WINDOW_SIZE[0], 100))
         pygame.draw.rect(screen, EARTH_COLOR, (0, 100, WINDOW_SIZE[0], 700))
-        for tunnel in tunnels: # Using the design pattern "Iterator".
+        for tunnel in tunnels:  # Using the design pattern "Iterator".
             tunnel.draw(screen)
         if debug_mode:
             i = 0
-            for tunnel in tunnels: # Using the design pattern "Iterator".
+            for tunnel in tunnels:  # Using the design pattern "Iterator".
                 net = str(waypoint_net[str(i)])
                 screen.blit(
                     tiny_font.render(str(i) + net, True, (255, 255, 255)),
@@ -711,9 +717,9 @@ def main():
             ),
         )
         screen.blit(text_reset, (BUTTON_RESET_X + 10, BUTTON_RESET_Y + 10))
-        for flag in flags: # Using the design pattern "Iterator".
+        for flag in flags:  # Using the design pattern "Iterator".
             flag.draw(screen)
-        for player in players: # Using the design pattern "Iterator".
+        for player in players:  # Using the design pattern "Iterator".
             player.draw(screen)
 
         # Update the display.
