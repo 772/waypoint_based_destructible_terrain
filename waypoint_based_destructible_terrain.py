@@ -69,7 +69,6 @@ class Player:
     y: float
     x_speed: float
     y_speed: float
-    patrol_between_tunnels: []
     last_visited_tunnel: int
 
     def __init__(self, x, y):
@@ -334,7 +333,7 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
-    pass
+    patrol_between_tunnels: []
 
 
 def main():
@@ -663,9 +662,9 @@ def main():
                 # Move the end of the latest tunnel segment to the player's position.
                 tunnels[-1].end_x = player.x
                 tunnels[-1].end_y = player.y
-                # The player should fall down while digging when there is no earth below. TODO: Finetune the values when the tunnel bugs are gone.
+                # The player should fall down while digging when there is no earth below.
                 if not player.is_there_solid_material(
-                    screen, 0, 12
+                    screen, 0, 3
                 ) and not player.is_there_solid_material(screen, 0, 1):
                     player.action = Action.FALLING
 
