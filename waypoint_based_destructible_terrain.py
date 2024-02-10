@@ -96,18 +96,19 @@ class Player:
     def command_start_digging(self, tunnels, waypoint_net):
         """Jump to the left."""
         if self.action in (Action.WALKING, Action.DIGGING):
-            amount_of_tunnels = len(tunnels)
-            if self.action == Action.DIGGING:
-                if amount_of_tunnels > 1:
-                    pass
-                    # TODO: Connect the latest two tunnels?
             self.action = Action.DIGGING
             tunnels.append(
                 Tunnel(
                     self.x_position, self.y_position, self.x_position, self.y_position
                 )
             )
-            waypoint_net[str(len(tunnels) - 1)] = []
+            new_tunnel_id = len(tunnels) - 1
+            # The new waypoint knows the last one.
+            waypoint_net[str(new_tunnel_id)] = [self.last_visited_tunnel]
+            # The last waypoint knows the new one.
+            waypoint_net[str(self.last_visited_tunnel)].append(new_tunnel_id)
+            # The player visits the new waypoint.
+            self.last_visited_tunnel = new_tunnel_id
 
     def command_jump_left(self):
         """Jump to the left."""
