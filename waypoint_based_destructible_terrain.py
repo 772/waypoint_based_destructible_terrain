@@ -23,7 +23,7 @@ SPEED_DIGGING: float = (
     0.8  # Should be much lower than SPEEDWALKING to make it more realistic.
 )
 # This is only controling the vertical jumping speed. The horizontal jumping speed is SPEED_WALKING.
-SPEED_JUMPING: float = 7.0
+SPEED_JUMPING: float = 3.5
 BUTTON_DEBUG_X: int = 10
 BUTTON_DEBUG_Y: int = 10
 BUTTON_DEBUG_WDT: int = 270
@@ -125,13 +125,14 @@ class Player:
                 del waypoint_net[
                     str(amount_of_tunnels - 1)
                 ]  # Delete the two latest waypoints.
-                for key in waypoint_net:  # Delete every reference to the new waypoint.
+                # Delete every reference to the new waypoint.
+                for key in waypoint_net:  # Using the design pattern "Iterator".
                     if amount_of_tunnels - 1 in waypoint_net[key]:
                         waypoint_net[key].remove(amount_of_tunnels - 1)
             else:
                 # Check if new connections are finished.
                 tunnel_id = 0
-                for tunnel in tunnels[:-2]:
+                for tunnel in tunnels[:-2]:  # Using the design pattern "Iterator".
                     margin = TUNNEL_HGT
                     if (
                         tunnel.end_x - margin
@@ -412,7 +413,7 @@ def main():
     text_reset = smallfont.render("Reset", True, (0, 0, 0))
     text2 = smallfont2.render(
         "Move via arrow keys. Start/end digging via left or right Control. Dig a tunnel to the red\
-        flag to make the AI move between the red flags.",
+ flag to make the AI move between the red flags.",
         True,
         (0, 0, 0),
     )
@@ -629,7 +630,11 @@ def main():
 
             if isinstance(player, AIPlayer):
                 # Does the AI have a patrol task?
-                if ai_timer < AI_TIMER and len(player.patrol_between_tunnels) > 1:
+                if (
+                    ai_timer < AI_TIMER
+                    and len(player.patrol_between_tunnels) > 1
+                    and player.action == Action.WALKING
+                ):
                     path = weightless_breadth_first_search(
                         waypoint_net,
                         player.last_visited_tunnel,
@@ -642,11 +647,23 @@ def main():
                             and tunnels[next_node].end_x
                             > tunnels[player.last_visited_tunnel].end_x
                         ):
-                            if (
-                                player.x_speed == 0
-                                and tunnels[player.last_visited_tunnel].end_y
-                                > tunnels[next_node].end_y
-                                and not player.is_there_solid_material(screen, 10, -1)
+                            if player.x_speed == 0 and (
+                                (
+                                    tunnels[player.last_visited_tunnel].end_y
+                                    > tunnels[next_node].end_y
+                                    and not player.is_there_solid_material(
+                                        screen, 10, -1
+                                    )
+                                )
+                                or (
+                                    tunnels[player.last_visited_tunnel].end_y
+                                    == tunnels[next_node].end_y
+                                    and not player.is_there_solid_material(
+                                        screen, 10, 1
+                                    )
+                                    and tunnels[next_node].end_x
+                                    > player.x_position + TUNNEL_HGT
+                                )
                             ):
                                 player.command_jump_right()
                             player.command_walk_right()
@@ -655,11 +672,23 @@ def main():
                             and tunnels[next_node].end_x
                             < tunnels[player.last_visited_tunnel].end_x
                         ):
-                            if (
-                                player.x_speed == 0
-                                and tunnels[player.last_visited_tunnel].end_y
-                                > tunnels[next_node].end_y
-                                and not player.is_there_solid_material(screen, -10, -1)
+                            if player.x_speed == 0 and (
+                                (
+                                    tunnels[player.last_visited_tunnel].end_y
+                                    > tunnels[next_node].end_y
+                                    and not player.is_there_solid_material(
+                                        screen, -10, -1
+                                    )
+                                )
+                                or (
+                                    tunnels[player.last_visited_tunnel].end_y
+                                    == tunnels[next_node].end_y
+                                    and not player.is_there_solid_material(
+                                        screen, -10, 1
+                                    )
+                                    and tunnels[next_node].end_x
+                                    < player.x_position - TUNNEL_HGT
+                                )
                             ):
                                 player.command_jump_left()
                             player.command_walk_left()
@@ -694,8 +723,10 @@ def main():
             # The player should not leave the screen.
             if player.x_position < 10:
                 player.x_position = 10
+                player.action = Action.FALLING
             elif player.x_position >= WINDOW_SIZE[0] - 10:
                 player.x_position = WINDOW_SIZE[0] - 11
+                player.action = Action.FALLING
             if player.y_position < 0:
                 player.y_position = 0
             elif player.y_position >= WINDOW_SIZE[1]:
@@ -704,7 +735,10 @@ def main():
             if player.action == Action.FALLING:
                 # Gravitation.
                 if player.y_speed < 10:
-                    player.y_speed += 0.5
+                    if player.y_speed < -2:
+                        player.y_speed += 0.075
+                    else:
+                        player.y_speed += 0.5
                 # Hit the ground?
                 if player.y_speed > 0 and player.is_there_solid_material(screen, 0, 1):
                     player.x_speed = 0
