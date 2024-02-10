@@ -16,7 +16,7 @@ import pygame
 WINDOW_SIZE = (1000, 800)
 EARTH_COLOR = (200, 130, 110)  # Brownish color.
 TUNNEL_COLOR = (100, 30, 10)  # Should be darker than earth color.
-SPEED_WALKING: float = 2.0  # Determines how fast he player is walking to left or right.
+SPEED_WALKING: float = 2.0  # Determines how fast he player is walking/jumping to left or right.
 SPEED_DIGGING: float = (
     0.8  # Should be much lower than SPEEDWALKING to make it more realistic.
 )
@@ -706,8 +706,12 @@ def main():
             for tunnel in tunnels:  # Using the design pattern "Iterator".
                 net = str(waypoint_net[str(i)])
                 screen.blit(
-                    tiny_font.render(str(i) + net, True, (255, 255, 255)),
+                    tiny_font.render(str(i), True, (255, 255, 255)),
                     (tunnel.end_x, tunnel.end_y),
+                )
+                screen.blit(
+                    tiny_font.render(net, True, (255, 255, 255)),
+                    (tunnel.end_x, tunnel.end_y + 20),
                 )
                 i += 1
         pygame.draw.rect(
