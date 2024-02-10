@@ -4,9 +4,9 @@ Author: Armin Schäfer
 Requirements: ```pip install pygame```
 """
 
-# Standard libraries.
+# Standard Python libraries.
 import math
-import random
+import sys
 from enum import Enum, auto
 
 # Third-party libraries.
@@ -14,10 +14,13 @@ import pygame
 
 # Constants.
 WINDOW_SIZE = (1000, 800)
-EARTH_COLOR = (200, 130, 110)
-TUNNEL_COLOR = (100, 30, 10)
-SPEED_WALKING: float = 2.0
-SPEED_DIGGING: float = 0.8
+EARTH_COLOR = (200, 130, 110)  # Brownish color.
+TUNNEL_COLOR = (100, 30, 10)  # Should be darker than earth color.
+SPEED_WALKING: float = 2.0  # Determines how fast he player is walking to left or right.
+SPEED_DIGGING: float = (
+    0.8  # Should be much lower than SPEEDWALKING to make it more realistic.
+)
+# This is only controling the vertical jumping speed. The horizontal jumping speed is SPEED_WALKING.
 SPEED_JUMPING: float = 7.0
 BUTTON_DEBUG_X: int = 10
 BUTTON_DEBUG_Y: int = 10
@@ -27,16 +30,22 @@ BUTTON_RESET_X: int = 300
 BUTTON_RESET_Y: int = 10
 BUTTON_RESET_WDT: int = 100
 BUTTON_RESET_HGT: int = 40
-TUNNEL_HGT: int = 40
-PLAYER_HGT: int = 20
-AI_TIMER: int = 40  # Only control AI every 40 frames.
-DEGREE_45: float = TUNNEL_HGT / 2 * math.sin(math.radians(45))
-DEGREE_22_X: float = TUNNEL_HGT / 2 * math.sin(math.radians(22.5))
-DEGREE_22_Y: float = TUNNEL_HGT / 2 * math.cos(math.radians(22.5))
+PLAYER_HGT: int = 20  # How tall is the player?
+TUNNEL_HGT: int = 40  # The tunnel height should be at least as big as PLAYER_HGT.
+AI_TIMER: int = 40  # Only control AIs every 40 frames.
+DEGREE_45: float = (
+    TUNNEL_HGT / 2 * math.sin(math.radians(45))
+)  # This constant is needed for drawing the tunnels when a player diggs down.
+DEGREE_22_X: float = (
+    TUNNEL_HGT / 2 * math.sin(math.radians(22.5))
+)  # This constant is needed for drawing the tunnels when a player diggs up.
+DEGREE_22_Y: float = (
+    TUNNEL_HGT / 2 * math.cos(math.radians(22.5))
+)  # This constant is needed for drawing the tunnels when a player diggs up.
 
 
 class Action(Enum):
-    """Used by the class Player."""
+    """Used by the class Player. There are three different actions a player can have."""
 
     FALLING = auto()
     WALKING = auto()
@@ -44,7 +53,8 @@ class Action(Enum):
 
 
 class TunnelDirection(Enum):
-    """Used by the class Player."""
+    """Used by the class Player. A player can dig to six directions. We need an enum for this
+    because we need to draw a tunnel depending on the direction of the tunnel."""
 
     FLAT = auto()
     RIGHTUP = auto()
@@ -61,23 +71,23 @@ class Direction(Enum):
 
 
 class Player:
-    """Player."""
+    """Player class which is the most important class in the techdemo."""
 
     action: Action
     direction: Direction
-    x: float
-    y: float
+    x_position: float
+    y_position: float
     x_speed: float
     y_speed: float
     last_visited_tunnel: int
 
-    def __init__(self, x, y):
+    def __init__(self, x_position, y_position):
         self.action = (
             Action.FALLING
         )  # The default action is FALLING because the player may spawn mid-air.
         self.direction = Direction.LEFT
-        self.x = x
-        self.y = y
+        self.x_position = x_position
+        self.y_position = y_position
         self.x_speed = 0
         self.y_speed = 0
         self.patrol_between_tunnels = []
@@ -85,14 +95,18 @@ class Player:
 
     def command_start_digging(self, tunnels, waypoint_net):
         """Jump to the left."""
-        if self.action == Action.WALKING or self.action == Action.DIGGING:
+        if self.action in (Action.WALKING, Action.DIGGING):
             amount_of_tunnels = len(tunnels)
             if self.action == Action.DIGGING:
                 if amount_of_tunnels > 1:
                     pass
                     # TODO: Connect the latest two tunnels?
             self.action = Action.DIGGING
-            tunnels.append(Tunnel(self.x, self.y, self.x, self.y))
+            tunnels.append(
+                Tunnel(
+                    self.x_position, self.y_position, self.x_position, self.y_position
+                )
+            )
             waypoint_net[str(len(tunnels) - 1)] = []
 
     def command_jump_left(self):
@@ -123,14 +137,19 @@ class Player:
 
     def command_stop(self):
         """If the player is walking, stop him."""
-        if self.action == Action.WALKING or self.action == Action.DIGGING:
+        if self.action in (Action.WALKING, Action.DIGGING):
             self.action = Action.WALKING
             self.x_speed = 0
 
-    def is_there_solid_material(self, screen, x: float, y: float) -> bool:
+    def is_there_solid_material(
+        self, screen, x_position: float, y_position: float
+    ) -> bool:
         """Returns True if there is earth at the given offset position."""
         return tuple(
-            pygame.Surface.get_at(screen, (int(self.x + x), int(self.y + y)))[:3]
+            pygame.Surface.get_at(
+                screen,
+                (int(self.x_position + x_position), int(self.y_position + y_position)),
+            )[:3]
         ) not in [
             TUNNEL_COLOR,
             (255, 0, 0),
@@ -140,6 +159,7 @@ class Player:
         ]
 
     def draw(self, screen):
+        """Draws a player to screen."""
         player_color = (255, 0, 0)
         if self.action == Action.DIGGING:
             player_color = (255, 255, 0)
@@ -147,12 +167,12 @@ class Player:
             screen,
             player_color,
             (
-                (self.x + 3, self.y),
-                (self.x + 2, self.y - 18),
-                (self.x - 2, self.y - 18),
-                (self.x - 3, self.y),
-                (self.x - 5, self.y - 20),
-                (self.x + 5, self.y - 20),
+                (self.x_position + 3, self.y_position),
+                (self.x_position + 2, self.y_position - 18),
+                (self.x_position - 2, self.y_position - 18),
+                (self.x_position - 3, self.y_position),
+                (self.x_position - 5, self.y_position - 20),
+                (self.x_position + 5, self.y_position - 20),
             ),
             0,
         )
@@ -161,25 +181,26 @@ class Player:
 class Flag:
     """Visual checkpoint."""
 
-    x: float
-    y: float
+    x_position: float
+    y_position: float
     color: []
 
-    def __init__(self, x, y, color):
-        self.x = x
-        self.y = y
+    def __init__(self, x_position, y_position, color):
+        self.x_position = x_position
+        self.y_position = y_position
         self.color = color
 
     def draw(self, screen):
+        """Draws a small flag to screen."""
         pygame.draw.polygon(
             screen,
             self.color,
             (
-                (self.x, self.y),
-                (self.x, self.y - 25),
-                (self.x + 10, self.y - 20),
-                (self.x + 2, self.y - 15),
-                (self.x + 2, self.y),
+                (self.x_position, self.y_position),
+                (self.x_position, self.y_position - 25),
+                (self.x_position + 10, self.y_position - 20),
+                (self.x_position + 2, self.y_position - 15),
+                (self.x_position + 2, self.y_position),
             ),
             0,
         )
@@ -212,6 +233,7 @@ class Tunnel:
                 self.direction = TunnelDirection.LEFTUP
 
     def draw(self, screen):
+        """Draws a dark brown tunnel to screen."""
         pygame.draw.circle(
             screen,
             TUNNEL_COLOR,
@@ -329,14 +351,17 @@ class Tunnel:
 
 
 class HumanPlayer(Player):
-    pass
+    """Subclass of Player. A human player can be controlled via keyboard."""
 
 
 class AIPlayer(Player):
+    """Subclass of Player. An AIPlayer has the ability to patrol between spots."""
+
     patrol_between_tunnels: []
 
 
 def main():
+    """The main function of the game that contains a endless loop."""
     pygame.init()
     pygame.display.set_caption("waypoint based destructible terrain")
     screen = pygame.display.set_mode(WINDOW_SIZE)
@@ -348,7 +373,8 @@ def main():
     text = smallfont.render("Turn on debug mode", True, (0, 0, 0))
     text_reset = smallfont.render("Reset", True, (0, 0, 0))
     text2 = smallfont2.render(
-        "Move via arrow keys. Start/end digging via left or right Control. Dig a tunnel to the red flag to make the AI move between the red flags.",
+        "Move via arrow keys. Start/end digging via left or right Control. Dig a tunnel to the red\
+        flag to make the AI move between the red flags.",
         True,
         (0, 0, 0),
     )
@@ -366,7 +392,8 @@ def main():
     flags.append(Flag(300, 400, (0, 255, 0)))  # Green flag.
     flags.append(Flag(50, 600, (0, 255, 0)))  # Green flag.
 
-    # Place some tunnels connecting the flags. Since the tunnels are placed manually, the waypoint net must be filled manually.
+    # Place some tunnels connecting the flags. Since the tunnels are placed manually, the waypoint
+    # net must be filled manually.
     tunnels.append(Tunnel(100, 200, 100, 200))  # Tunnel at the red flags. ID = 0.
     tunnels.append(Tunnel(100, 200, 900, 200))  # Tunnel at the red flags. ID = 1.
     tunnels.append(Tunnel(680, 400, 680, 400))  # Tunnel at the red flags. ID = 2.
@@ -424,11 +451,11 @@ def main():
 
         for player in players:  # Using the design pattern "Iterator".
             # Keyboard and mouse input for human players.
-            if type(player) == HumanPlayer:
+            if isinstance(player, HumanPlayer):
                 event_list = pygame.event.get()
                 for event in event_list:  # Using the design pattern "Iterator".
                     if event.type == pygame.QUIT:
-                        exit()
+                        sys.exit()
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse = pygame.mouse.get_pos()
                         if (
@@ -459,11 +486,11 @@ def main():
                             main()
                     if event.type == pygame.KEYDOWN:
                         if (
-                            event.key == pygame.K_RCTRL or event.key == pygame.K_LCTRL
+                            event.key in (pygame.K_RCTRL, pygame.K_LCTRL)
                         ) and player.action == Action.WALKING:
                             player.command_start_digging(tunnels, waypoint_net)
                         elif (
-                            event.key == pygame.K_RCTRL or event.key == pygame.K_LCTRL
+                            event.key in (pygame.K_RCTRL, pygame.K_LCTRL)
                         ) and player.action == Action.DIGGING:
                             player.command_stop()
                         elif (
@@ -530,7 +557,7 @@ def main():
                                 player.command_jump_right()
                     if event.type == pygame.KEYUP:
                         if (
-                            event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT
+                            event.key in (pygame.K_LEFT, pygame.K_RIGHT)
                         ) and player.action == Action.WALKING:
                             player.command_stop()
                         if (
@@ -559,7 +586,7 @@ def main():
             if debug_mode:
                 break
 
-            if type(player) == AIPlayer:
+            if isinstance(player, AIPlayer):
                 # Does the AI have a patrol task?
                 if ai_timer < AI_TIMER and len(player.patrol_between_tunnels) > 1:
                     path = weightless_breadth_first_search(
@@ -569,7 +596,7 @@ def main():
                     )
                     if len(path) > 0:
                         next_node = path[1]
-                        if tunnels[next_node].end_x > player.x:
+                        if tunnels[next_node].end_x > player.x_position:
                             if (
                                 player.x_speed == 0
                                 and tunnels[player.last_visited_tunnel].end_y
@@ -578,7 +605,7 @@ def main():
                             ):
                                 player.command_jump_right()
                             player.command_walk_right()
-                        elif tunnels[next_node].end_x < player.x:
+                        elif tunnels[next_node].end_x < player.x_position:
                             if (
                                 player.x_speed == 0
                                 and tunnels[player.last_visited_tunnel].end_y
@@ -606,24 +633,24 @@ def main():
                 ) and player.is_there_solid_material(screen, 7, -20):
                     player.x_speed = 0
                 else:
-                    player.x += player.x_speed
+                    player.x_position += player.x_speed
             elif player.x_speed < 0:
                 if player.is_there_solid_material(
                     screen, -7, 0
                 ) and player.is_there_solid_material(screen, -7, -20):
                     player.x_speed = 0
                 else:
-                    player.x += player.x_speed
-            player.y += player.y_speed
+                    player.x_position += player.x_speed
+            player.y_position += player.y_speed
             # The player should not leave the screen.
-            if player.x < 10:
-                player.x = 10
-            elif player.x >= WINDOW_SIZE[0] - 10:
-                player.x = WINDOW_SIZE[0] - 11
-            if player.y < 0:
-                player.y = 0
-            elif player.y >= WINDOW_SIZE[1]:
-                player.y = WINDOW_SIZE[1] - 1
+            if player.x_position < 10:
+                player.x_position = 10
+            elif player.x_position >= WINDOW_SIZE[0] - 10:
+                player.x_position = WINDOW_SIZE[0] - 11
+            if player.y_position < 0:
+                player.y_position = 0
+            elif player.y_position >= WINDOW_SIZE[1]:
+                player.y_position = WINDOW_SIZE[1] - 1
             # Is the player falling?
             if player.action == Action.FALLING:
                 # Gravitation.
@@ -642,29 +669,29 @@ def main():
                     player.x_speed = 0
                     player.y_speed = 0
             if player.action == Action.WALKING:
-                a = False
+                no_ground_below = False
                 if player.x_speed != 0:
                     if not player.is_there_solid_material(screen, 0, 1):
-                        player.y += 1
+                        player.y_position += 1
                         if not player.is_there_solid_material(screen, 0, 1):
-                            player.y += 1
+                            player.y_position += 1
                             if not player.is_there_solid_material(screen, 0, 1):
-                                player.y += 1
+                                player.y_position += 1
                                 if not player.is_there_solid_material(screen, 0, 1):
                                     player.action = Action.FALLING
-                        a = True
+                        no_ground_below = True
                     while (
                         player.is_there_solid_material(screen, -5, -2)
                         or player.is_there_solid_material(screen, 5, -2)
-                    ) and a == False:
-                        player.y -= 1
+                    ) and not no_ground_below:
+                        player.y_position -= 1
             if player.action == Action.DIGGING:
                 # Move the end of the latest tunnel segment to the player's position.
-                tunnels[-1].end_x = player.x
-                tunnels[-1].end_y = player.y
+                tunnels[-1].end_x = player.x_position
+                tunnels[-1].end_y = player.y_position
                 # The player should fall down while digging when there is no earth below.
                 if not player.is_there_solid_material(
-                    screen, 0, 3
+                    screen, 0, 4
                 ) and not player.is_there_solid_material(screen, 0, 1):
                     player.action = Action.FALLING
 
@@ -726,7 +753,8 @@ def main():
 
 
 def weightless_breadth_first_search(graph, start, end) -> []:
-    """Finds the a list of nodes between two nodes. The function does not care about the distance between nodes (weights)."""
+    """Finds the a list of nodes between two nodes. The function does not care about the distance
+    between nodes (weights)."""
     queue = [[start]]
     visited = []
     # Return an empty list if the goal is already there.
