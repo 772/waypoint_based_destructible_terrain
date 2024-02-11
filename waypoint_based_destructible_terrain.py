@@ -189,12 +189,8 @@ class Player:
                 screen,
                 (int(self.x_position + x_position), int(self.y_position + y_position)),
             )[:3]
-        ) not in [
-            TUNNEL_COLOR,
-            (255, 0, 0),
-            (255, 255, 0),
-            (0, 255, 0),
-            (255, 255, 255),
+        ) in [
+            EARTH_COLOR,
         ]
 
     def draw(self, screen):
@@ -236,10 +232,10 @@ class Flag:
             self.color,
             (
                 (self.x_position, self.y_position),
-                (self.x_position, self.y_position - 25),
-                (self.x_position + 10, self.y_position - 20),
-                (self.x_position + 2, self.y_position - 15),
-                (self.x_position + 2, self.y_position),
+                (self.x_position, self.y_position - 30),
+                (self.x_position + 15, self.y_position - 25),
+                (self.x_position + 1, self.y_position - 20),
+                (self.x_position + 1, self.y_position),
             ),
             0,
         )
@@ -397,6 +393,7 @@ class AIPlayer(Player):
     """Subclass of Player. An AIPlayer has the ability to patrol between spots."""
 
     patrol_between_tunnels: []
+    current_path: []
 
 
 def main():
@@ -434,7 +431,7 @@ def main():
     # Place some tunnels connecting the flags. Since the tunnels are placed manually, the waypoint
     # net must be filled manually.
     tunnels.append(Tunnel(100, 200, 100, 200))  # Tunnel at the red flags. ID = 0.
-    tunnels.append(Tunnel(100, 200, 900, 200))  # Tunnel at the red flags. ID = 1.
+    tunnels.append(Tunnel(100, 200, 600, 200))  # Tunnel at the red flags. ID = 1.
     tunnels.append(Tunnel(680, 400, 680, 400))  # Tunnel at the red flags. ID = 2.
     tunnels.append(Tunnel(680, 400, 720, 400))  # Tunnel at the red flags. ID = 3.
     tunnels.append(
@@ -624,10 +621,6 @@ def main():
                             player.x_speed = 0
                             player.y_speed = 0
 
-            # No action when debug mode in set.
-            if debug_mode:
-                break
-
             if isinstance(player, AIPlayer):
                 # Does the AI have a patrol task?
                 if (
@@ -640,6 +633,7 @@ def main():
                         player.last_visited_tunnel,
                         player.patrol_between_tunnels[0],
                     )
+                    player.current_path = path
                     if len(path) > 0:
                         next_node = path[1]
                         if (
@@ -780,25 +774,39 @@ def main():
                         tunnels, waypoint_net
                     )
                     player.action = Action.FALLING
-                    
 
         # Drawing.
-        pygame.draw.rect(screen, (240, 240, 250), (0, 0, WINDOW_SIZE[0], 100))
-        pygame.draw.rect(screen, (0, 0, 0), (0, 99, WINDOW_SIZE[0], 100))
         pygame.draw.rect(screen, EARTH_COLOR, (0, 100, WINDOW_SIZE[0], 700))
         for tunnel in tunnels:  # Using the design pattern "Iterator".
             tunnel.draw(screen)
+        pygame.draw.rect(screen, (200, 220, 255), (0, 0, WINDOW_SIZE[0], 100))
         if debug_mode:
+            for player in players:  # Using the design pattern "Iterator".
+                if isinstance(player, AIPlayer):
+                    path_len = len(player.current_path)
+                    if path_len >= 2:
+                        for i in range(path_len - 1):
+                            pygame.draw.line(
+                                screen,
+                                (200, 200, 200),
+                                (
+                                    tunnels[player.current_path[i]].end_x,
+                                    tunnels[player.current_path[i]].end_y
+                                    - TUNNEL_HGT / 2,
+                                ),
+                                (
+                                    tunnels[player.current_path[i + 1]].end_x,
+                                    tunnels[player.current_path[i + 1]].end_y
+                                    - TUNNEL_HGT / 2,
+                                ),
+                                1,
+                            )
             i = 0
             for tunnel in tunnels:  # Using the design pattern "Iterator".
                 net = str(waypoint_net[str(i)])
                 screen.blit(
                     tiny_font.render(str(i), True, (255, 255, 255)),
-                    (tunnel.end_x, tunnel.end_y),
-                )
-                screen.blit(
-                    tiny_font.render(net, True, (255, 255, 255)),
-                    (tunnel.end_x, tunnel.end_y + 20),
+                    (tunnel.end_x, tunnel.end_y - TUNNEL_HGT / 2),
                 )
                 i += 1
         pygame.draw.rect(
