@@ -25,11 +25,11 @@ SPEED_DIGGING: float = (
 # This is only controling the vertical jumping speed. The horizontal jumping speed is SPEED_WALKING.
 SPEED_JUMPING: float = 3.5
 BUTTON_DEBUG_X: int = 10
-BUTTON_DEBUG_Y: int = 10
+BUTTON_DEBUG_Y: int = 45
 BUTTON_DEBUG_WDT: int = 270
 BUTTON_DEBUG_HGT: int = 40
 BUTTON_RESET_X: int = 300
-BUTTON_RESET_Y: int = 10
+BUTTON_RESET_Y: int = 45
 BUTTON_RESET_WDT: int = 100
 BUTTON_RESET_HGT: int = 40
 PLAYER_HGT: int = 20  # How tall is the player?
@@ -79,17 +79,19 @@ class Player:
     direction: Direction
     x_position: float
     y_position: float
+    color: ()
     x_speed: float
     y_speed: float
     last_visited_tunnel: int
 
-    def __init__(self, x_position, y_position):
+    def __init__(self, x_position, y_position, color):
         self.action = (
             Action.FALLING
         )  # The default action is FALLING because the player may spawn mid-air.
         self.direction = Direction.LEFT
         self.x_position = x_position
         self.y_position = y_position
+        self.color = color
         self.x_speed = 0
         self.y_speed = 0
         self.patrol_between_tunnels = []
@@ -195,22 +197,75 @@ class Player:
 
     def draw(self, screen):
         """Draws a player to screen."""
-        player_color = (255, 0, 0)
         if self.action == Action.DIGGING:
             player_color = (255, 255, 0)
-        pygame.draw.polygon(
+        hgt = 20
+        wdt = 10
+        pygame.draw.line(
             screen,
-            player_color,
-            (
-                (self.x_position + 3, self.y_position),
-                (self.x_position + 2, self.y_position - 18),
-                (self.x_position - 2, self.y_position - 18),
-                (self.x_position - 3, self.y_position),
-                (self.x_position - 5, self.y_position - 20),
-                (self.x_position + 5, self.y_position - 20),
-            ),
-            0,
+            self.color,
+            (self.x_position, self.y_position - hgt / 2),
+            (self.x_position - wdt / 2, self.y_position),
+            2,
         )
+        pygame.draw.line(
+            screen,
+            self.color,
+            (self.x_position, self.y_position - hgt / 2),
+            (self.x_position + wdt / 2, self.y_position),
+            2,
+        )
+        pygame.draw.line(
+            screen,
+            self.color,
+            (self.x_position, self.y_position - hgt / 3),
+            (self.x_position, self.y_position - hgt),
+            2,
+        )
+        pygame.draw.line(
+            screen,
+            self.color,
+            (self.x_position, self.y_position - hgt / 3 * 2),
+            (
+                self.x_position
+                + wdt / 2 * (1 if self.direction == Direction.RIGHT else -1),
+                self.y_position - hgt / 3 * 2,
+            ),
+            2,
+        )
+        pygame.draw.circle(
+            screen,
+            self.color,
+            (self.x_position, self.y_position - hgt),
+            wdt / 2,
+        )
+        # Digging? Draw a shovel.
+        if self.action == Action.DIGGING:
+            pygame.draw.line(
+                screen,
+                (255, 100, 10),
+                (
+                    self.x_position
+                    - wdt / 2 * (1 if self.direction == Direction.RIGHT else -1),
+                    self.y_position - 5,
+                ),
+                (
+                    self.x_position
+                    + wdt * (1 if self.direction == Direction.RIGHT else -1),
+                    self.y_position - hgt + pygame.time.get_ticks() % 4,
+                ),
+                2,
+            )
+            pygame.draw.circle(
+                screen,
+                (100, 100, 100),
+                (
+                    self.x_position
+                    + wdt * (1 if self.direction == Direction.RIGHT else -1),
+                    self.y_position - hgt + pygame.time.get_ticks() % 4,
+                ),
+                wdt / 2,
+            )
 
 
 class Flag:
@@ -421,39 +476,39 @@ def main():
     waypoint_net = {}
 
     # Place flags.
-    flags.append(Flag(100, 200, (255, 0, 0)))  # Red flag.
-    flags.append(Flag(720, 400, (255, 0, 0)))  # Red flag.
-    flags.append(Flag(100, 400, (255, 255, 0)))  # Yellow flag.
-    flags.append(Flag(300, 600, (255, 255, 0)))  # Yellow flag.
-    flags.append(Flag(300, 400, (0, 255, 0)))  # Green flag.
-    flags.append(Flag(50, 600, (0, 255, 0)))  # Green flag.
+    flags.append(Flag(100, 300, (255, 0, 0)))  # Red flag.
+    flags.append(Flag(720, 500, (255, 0, 0)))  # Red flag.
+    flags.append(Flag(100, 500, (255, 255, 0)))  # Yellow flag.
+    flags.append(Flag(300, 700, (255, 255, 0)))  # Yellow flag.
+    flags.append(Flag(300, 500, (0, 255, 0)))  # Green flag.
+    flags.append(Flag(50, 700, (0, 255, 0)))  # Green flag.
 
     # Place some tunnels connecting the flags. Since the tunnels are placed manually, the waypoint
     # net must be filled manually.
-    tunnels.append(Tunnel(100, 200, 100, 200))  # Tunnel at the red flags. ID = 0.
-    tunnels.append(Tunnel(100, 200, 600, 200))  # Tunnel at the red flags. ID = 1.
-    tunnels.append(Tunnel(680, 400, 680, 400))  # Tunnel at the red flags. ID = 2.
-    tunnels.append(Tunnel(680, 400, 720, 400))  # Tunnel at the red flags. ID = 3.
+    tunnels.append(Tunnel(100, 300, 100, 300))  # Tunnel at the red flags. ID = 0.
+    tunnels.append(Tunnel(100, 300, 600, 300))  # Tunnel at the red flags. ID = 1.
+    tunnels.append(Tunnel(680, 500, 680, 500))  # Tunnel at the red flags. ID = 2.
+    tunnels.append(Tunnel(680, 500, 720, 500))  # Tunnel at the red flags. ID = 3.
     tunnels.append(
-        Tunnel(100, 400, 100, 400)
+        Tunnel(100, 500, 100, 500)
     )  # Tunnel for yellow flags. Top left. ID = 4.
     tunnels.append(
-        Tunnel(100, 400, 200, 500)
+        Tunnel(100, 500, 200, 600)
     )  # Tunnel for yellow flags. Middle. ID = 5.
     tunnels.append(
-        Tunnel(200, 500, 300, 600)
+        Tunnel(200, 600, 300, 700)
     )  # Tunnel for yellow flags. Bottom right. ID = 6.
     tunnels.append(
-        Tunnel(300, 400, 300, 400)
+        Tunnel(300, 500, 300, 500)
     )  # Tunnel for green flags. Top right. ID = 7.
     tunnels.append(
-        Tunnel(300, 400, 200, 500)
+        Tunnel(300, 500, 200, 600)
     )  # Tunnel for green flags. Middle. ID = 8.
     tunnels.append(
-        Tunnel(200, 500, 100, 600)
+        Tunnel(200, 600, 100, 700)
     )  # Tunnel for green flags. Bottom left. ID = 9.
     tunnels.append(
-        Tunnel(100, 600, 50, 600)
+        Tunnel(100, 700, 50, 700)
     )  # Tunnel for green flags. Bottom left. ID = 10.
     waypoint_net["0"] = [1]
     waypoint_net["1"] = [0]
@@ -468,14 +523,14 @@ def main():
     waypoint_net["10"] = [9]
 
     # Place players.
-    players.append(HumanPlayer(500, 200))  # Human player.
-    players.append(AIPlayer(700, 400))  # AI patrolling red flags.
+    players.append(HumanPlayer(500, 300, (255, 100, 0)))  # Human player.
+    players.append(AIPlayer(700, 500, (255, 0, 0)))  # AI patrolling red flags.
     players[-1].patrol_between_tunnels = [0, 3]
     players[-1].last_visited_tunnel = 3
-    players.append(AIPlayer(100, 400))  # AI patrolling yellow flags.
+    players.append(AIPlayer(100, 500, (255, 255, 0)))  # AI patrolling yellow flags.
     players[-1].patrol_between_tunnels = [6, 4]
     players[-1].last_visited_tunnel = 4
-    players.append(AIPlayer(300, 400))  # AI patrolling green flags.
+    players.append(AIPlayer(300, 500, (0, 255, 0)))  # AI patrolling green flags.
     players[-1].patrol_between_tunnels = [10, 7]
     players[-1].last_visited_tunnel = 7
 
@@ -776,10 +831,10 @@ def main():
                     player.action = Action.FALLING
 
         # Drawing.
-        pygame.draw.rect(screen, EARTH_COLOR, (0, 100, WINDOW_SIZE[0], 700))
+        pygame.draw.rect(screen, EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 700))
         for tunnel in tunnels:  # Using the design pattern "Iterator".
             tunnel.draw(screen)
-        pygame.draw.rect(screen, (200, 220, 255), (0, 0, WINDOW_SIZE[0], 100))
+        pygame.draw.rect(screen, (200, 220, 255), (0, 0, WINDOW_SIZE[0], 200))
         if debug_mode:
             for player in players:  # Using the design pattern "Iterator".
                 if isinstance(player, AIPlayer):
@@ -816,7 +871,7 @@ def main():
         )
         pygame.draw.rect(
             screen,
-            (255, 255, 255),
+            (100, 160, 100),
             (
                 BUTTON_DEBUG_X + 1,
                 BUTTON_DEBUG_Y + 1,
@@ -825,7 +880,7 @@ def main():
             ),
         )
         screen.blit(text, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y + 10))
-        screen.blit(text2, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y + 50))
+        screen.blit(text2, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y - 30))
         pygame.draw.rect(
             screen,
             (0, 0, 0),
@@ -833,7 +888,7 @@ def main():
         )
         pygame.draw.rect(
             screen,
-            (255, 255, 255),
+            (100, 160, 100),
             (
                 BUTTON_RESET_X + 1,
                 BUTTON_RESET_Y + 1,
