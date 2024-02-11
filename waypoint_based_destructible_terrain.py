@@ -852,7 +852,7 @@ def main():
                         for i in range(path_len - 1):
                             pygame.draw.line(
                                 screen,
-                                (200, 200, 200),
+                                player.color,
                                 (
                                     tunnels[player.current_path[i]].end_x,
                                     tunnels[player.current_path[i]].end_y
