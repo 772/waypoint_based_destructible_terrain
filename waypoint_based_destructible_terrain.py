@@ -33,6 +33,7 @@ BUTTON_RESET_Y: int = 45
 BUTTON_RESET_WDT: int = 100
 BUTTON_RESET_HGT: int = 40
 PLAYER_HGT: int = 20  # How tall is the player?
+PLAYER_WDT: int = 10  # How wide is the player?
 TUNNEL_HGT: int = 40  # The tunnel height should be at least as big as PLAYER_HGT.
 AI_TIMER: int = 40  # Only control AIs every 40 frames.
 DEGREE_45: float = (
@@ -199,8 +200,9 @@ class Player:
         """Draws a player to screen."""
         if self.action == Action.DIGGING:
             player_color = (255, 255, 0)
-        hgt = 20
-        wdt = 10
+        hgt = PLAYER_HGT
+        wdt = PLAYER_WDT
+        # Left leg.
         pygame.draw.line(
             screen,
             self.color,
@@ -208,6 +210,7 @@ class Player:
             (self.x_position - wdt / 2, self.y_position),
             2,
         )
+        # Right leg.
         pygame.draw.line(
             screen,
             self.color,
@@ -215,6 +218,7 @@ class Player:
             (self.x_position + wdt / 2, self.y_position),
             2,
         )
+        # Spine.
         pygame.draw.line(
             screen,
             self.color,
@@ -222,6 +226,7 @@ class Player:
             (self.x_position, self.y_position - hgt),
             2,
         )
+        # Arms.
         pygame.draw.line(
             screen,
             self.color,
@@ -229,17 +234,19 @@ class Player:
             (
                 self.x_position
                 + wdt / 2 * (1 if self.direction == Direction.RIGHT else -1),
-                self.y_position - hgt / 3 * 2,
+                self.y_position
+                - (hgt / 5 * 4 if self.action == Action.FALLING else hgt / 3 * 2),
             ),
             2,
         )
+        # Head.
         pygame.draw.circle(
             screen,
             self.color,
             (self.x_position, self.y_position - hgt),
             wdt / 2,
         )
-        # Digging? Draw a shovel.
+        # Digging? If yes, draw a shovel.
         if self.action == Action.DIGGING:
             pygame.draw.line(
                 screen,
@@ -458,12 +465,12 @@ def main():
     screen = pygame.display.set_mode(WINDOW_SIZE)
     clock = pygame.time.Clock()
     debug_mode = False
-    smallfont = pygame.font.SysFont("Corbel", 35)
-    smallfont2 = pygame.font.SysFont("Corbel", 22)
-    tiny_font = pygame.font.SysFont("Corbel", 20)
-    text = smallfont.render("Turn on debug mode", True, (0, 0, 0))
-    text_reset = smallfont.render("Reset", True, (0, 0, 0))
-    text2 = smallfont2.render(
+    font_big = pygame.font.SysFont("Corbel", 35)
+    font_medium = pygame.font.SysFont("Corbel", 22)
+    font_small = pygame.font.SysFont("Corbel", 20)
+    text = font_big.render("Turn on debug mode", True, (0, 0, 0))
+    text_reset = font_big.render("Reset", True, (0, 0, 0))
+    text_goal = font_medium.render(
         "Move via arrow keys. Start/end digging via left or right Control. Dig a tunnel to the red\
  flag to make the AI move between the red flags.",
         True,
@@ -559,11 +566,11 @@ def main():
                         ):
                             debug_mode = not debug_mode
                             if debug_mode:
-                                text = smallfont.render(
+                                text = font_big.render(
                                     "Turn off debug mode", True, (0, 0, 0)
                                 )
                             else:
-                                text = smallfont.render(
+                                text = font_big.render(
                                     "Turn on debug mode", True, (0, 0, 0)
                                 )
                         if (
@@ -810,11 +817,13 @@ def main():
                             if not player.is_there_solid_material(screen, 0, 1):
                                 player.y_position += 1
                                 if not player.is_there_solid_material(screen, 0, 1):
-                                    player.action = Action.FALLING
+                                    player.y_position += 1
+                                    if not player.is_there_solid_material(screen, 0, 1):
+                                        player.action = Action.FALLING
                         no_ground_below = True
                     while (
-                        player.is_there_solid_material(screen, -5, -2)
-                        or player.is_there_solid_material(screen, 5, -2)
+                        player.is_there_solid_material(screen, -4, -2)
+                        or player.is_there_solid_material(screen, 4, -2)
                     ) and not no_ground_below:
                         player.y_position -= 1
             if player.action == Action.DIGGING:
@@ -860,7 +869,7 @@ def main():
             for tunnel in tunnels:  # Using the design pattern "Iterator".
                 net = str(waypoint_net[str(i)])
                 screen.blit(
-                    tiny_font.render(str(i), True, (255, 255, 255)),
+                    font_small.render(str(i), True, (255, 255, 255)),
                     (tunnel.end_x, tunnel.end_y - TUNNEL_HGT / 2),
                 )
                 i += 1
@@ -880,7 +889,7 @@ def main():
             ),
         )
         screen.blit(text, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y + 10))
-        screen.blit(text2, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y - 30))
+        screen.blit(text_goal, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y - 30))
         pygame.draw.rect(
             screen,
             (0, 0, 0),
