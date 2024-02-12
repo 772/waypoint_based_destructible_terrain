@@ -19,14 +19,9 @@ EARTH_COLOR = (200, 130, 110)  # Brownish color.
 LIGHT_EARTH_COLOR = (210, 140, 120)  # Lighter than EARTH_COLOR.
 DARK_EARTH_COLOR = (190, 120, 100)  # Lighter than EARTH_COLOR.
 TUNNEL_COLOR = (100, 30, 10)  # Should be darker than earth color.
-SPEED_WALKING: float = (
-    2.0  # Determines how fast he player is walking/jumping to left or right.
-)
-SPEED_DIGGING: float = (
-    0.8  # Should be much lower than SPEEDWALKING to make it more realistic.
-)
-# This is only controling the vertical jumping speed. The horizontal jumping speed is SPEED_WALKING.
-SPEED_JUMPING: float = 3.5
+SPEED_WALKING: float = 2.0  # How fast the player is walking/jumping to left or right.
+SPEED_DIGGING: float = 0.8  # Should be lower than SPEED_WALKING.
+SPEED_JUMPING: float = 3.5  # Vertical jumping speed.
 BUTTON_DEBUG_X: int = 10
 BUTTON_DEBUG_Y: int = 45
 BUTTON_DEBUG_WDT: int = 270
@@ -35,18 +30,12 @@ BUTTON_RESET_X: int = 300
 BUTTON_RESET_Y: int = 45
 BUTTON_RESET_WDT: int = 100
 BUTTON_RESET_HGT: int = 40
-PLAYER_HGT: int = 20  # How tall is the player?
-PLAYER_WDT: int = 10  # How wide is the player?
+PLAYER_HGT: int = 20  # How tall the player is.
+PLAYER_WDT: int = 10  # How wide the player is.
 TUNNEL_HGT: int = 40  # The tunnel height should be at least as big as PLAYER_HGT.
-DEGREE_45: float = (
-    TUNNEL_HGT / 2 * math.sin(math.radians(45))
-)  # This constant is needed for drawing the tunnels when a player diggs down.
-DEGREE_22_X: float = (
-    TUNNEL_HGT / 2 * math.sin(math.radians(22.5))
-)  # This constant is needed for drawing the tunnels when a player diggs up.
-DEGREE_22_Y: float = (
-    TUNNEL_HGT / 2 * math.cos(math.radians(22.5))
-)  # This constant is needed for drawing the tunnels when a player diggs up.
+DEGREE_45: float = TUNNEL_HGT / 2 * math.sin(math.radians(45))  # Tunnels going down.
+DEGREE_22_X: float = TUNNEL_HGT / 2 * math.sin(math.radians(22.5))  # Tunnels going up.
+DEGREE_22_Y: float = TUNNEL_HGT / 2 * math.cos(math.radians(22.5))  # Tunnels going up.
 
 
 class Action(Enum):
@@ -88,9 +77,9 @@ class Player:
     last_visited_tunnel: int
 
     def __init__(self, x_position, y_position, color):
-        self.action = (
-            Action.FALLING
-        )  # The default action is FALLING because the player may spawn mid-air.
+        # The default action is Action.FALLING because the player may spawn mid-air.
+        # He will fall down anyway because of gravitation and will continue to be in Action.WALKING.
+        self.action = Action.FALLING
         self.direction = Direction.LEFT
         self.x_position = x_position
         self.y_position = y_position
@@ -101,7 +90,7 @@ class Player:
         self.last_visited_tunnel = 0
 
     def command_start_digging(self, game_state):
-        """Jump to the left."""
+        """Start digging a tunnel in the landscape."""
         if self.action in (Action.WALKING, Action.DIGGING):
             self.last_visited_tunnel = self.get_nearest_tunnel(game_state)
             self.action = Action.DIGGING
@@ -119,7 +108,7 @@ class Player:
             self.last_visited_tunnel = new_tunnel_id
 
     def get_nearest_tunnel(self, game_state):
-        """Gets a nearby tunnel. If none found, return last_visited_tunnel."""
+        """Gets a nearby tunnel. If none found, return self.last_visited_tunnel."""
         return self.last_visited_tunnel
 
     def command_stop_digging(self, game_state):
@@ -206,9 +195,7 @@ class Player:
                 screen,
                 (int(self.x_position + x_position), int(self.y_position + y_position)),
             )[:3]
-        ) in [
-            EARTH_COLOR, LIGHT_EARTH_COLOR
-        ]
+        ) in [EARTH_COLOR, LIGHT_EARTH_COLOR]
 
     def apply_speed(self, game_state):
         """Moves players on x- and y-axis."""
@@ -307,7 +294,7 @@ class Player:
         """Draws a player to screen."""
         hgt = PLAYER_HGT
         wdt = PLAYER_WDT
-        # Left leg.
+        # Draw left leg.
         pygame.draw.line(
             screen,
             self.color,
@@ -315,7 +302,7 @@ class Player:
             (self.x_position - wdt / 2, self.y_position),
             2,
         )
-        # Right leg.
+        # Draw right leg.
         pygame.draw.line(
             screen,
             self.color,
@@ -323,7 +310,7 @@ class Player:
             (self.x_position + wdt / 2, self.y_position),
             2,
         )
-        # Spine.
+        # Draw spine.
         pygame.draw.line(
             screen,
             self.color,
@@ -331,7 +318,7 @@ class Player:
             (self.x_position, self.y_position - hgt),
             2,
         )
-        # Arms.
+        # Draw arms. The player is holding both arms out towards the direction he is looking! :)
         pygame.draw.line(
             screen,
             self.color,
@@ -344,7 +331,7 @@ class Player:
             ),
             2,
         )
-        # Head.
+        # Draw head.
         pygame.draw.circle(
             screen,
             self.color,
@@ -381,7 +368,7 @@ class Player:
 
 
 class Flag:
-    """Visual checkpoint."""
+    """Visual checkpoint that is only used for decoration."""
 
     x_position: float
     y_position: float
@@ -409,7 +396,7 @@ class Flag:
 
 
 class Tunnel:
-    """Visual hole in the earth."""
+    """A hole in the earth. Players can jump and walk in tunnels."""
 
     start_x: float
     start_y: float
@@ -599,17 +586,15 @@ class HumanPlayer(Player):
                     self.command_walk_left()
                 elif event.key == pygame.K_RIGHT and self.action == Action.WALKING:
                     self.command_walk_right()
-                elif (
-                    event.key == pygame.K_RIGHT and self.action == Action.DIGGING
-                ):  # Digging to RIGHT.
+                elif event.key == pygame.K_RIGHT and self.action == Action.DIGGING:
+                    # Digging to RIGHT.
                     self.command_start_digging(game_state)
                     game_state.tunnels[-1].direction = TunnelDirection.FLAT
                     self.direction = Direction.RIGHT
                     self.x_speed = SPEED_DIGGING
                     self.y_speed = 0
-                elif (
-                    event.key == pygame.K_LEFT and self.action == Action.DIGGING
-                ):  # Digging to LEFT.
+                elif event.key == pygame.K_LEFT and self.action == Action.DIGGING:
+                    # Digging to LEFT.
                     self.command_start_digging(game_state)
                     game_state.tunnels[-1].direction = TunnelDirection.FLAT
                     self.direction = Direction.LEFT
@@ -617,19 +602,23 @@ class HumanPlayer(Player):
                     self.y_speed = 0
                 elif event.key == pygame.K_UP and self.action == Action.DIGGING:
                     self.command_start_digging(game_state)
-                    if self.direction == Direction.RIGHT:  # Digging to RIGHT UP.
+                    if self.direction == Direction.RIGHT:
+                        # Digging to RIGHT UP.
                         self.x_speed = SPEED_DIGGING
                         game_state.tunnels[-1].direction = TunnelDirection.RIGHTUP
-                    else:  # Digging to LEFT UP.
+                    else:
+                        # Digging to LEFT UP.
                         self.x_speed = -SPEED_DIGGING
                         game_state.tunnels[-1].direction = TunnelDirection.LEFTUP
                     self.y_speed = -SPEED_DIGGING / 2
                 elif event.key == pygame.K_DOWN and self.action == Action.DIGGING:
                     self.command_start_digging(game_state)
-                    if self.direction == Direction.RIGHT:  # Digging to RIGHT DOWN.
+                    if self.direction == Direction.RIGHT:
+                        # Digging to RIGHT DOWN.
                         self.x_speed = SPEED_DIGGING
                         game_state.tunnels[-1].direction = TunnelDirection.RIGHTDOWN
-                    else:  # Digging to LEFT DOWN.
+                    else:
+                        # Digging to LEFT DOWN.
                         self.x_speed = -SPEED_DIGGING
                         game_state.tunnels[-1].direction = TunnelDirection.LEFTDOWN
                     self.y_speed = SPEED_DIGGING
@@ -822,17 +811,13 @@ red flag to make the AI move between the red flags.",
         # Place players.
         self.players = []
         self.players.append(HumanPlayer(300, 300, (255, 100, 0)))  # Human player.
-        self.players.append(AIPlayer(700, 500, (255, 0, 0)))  # AI patrolling red flags.
+        self.players.append(AIPlayer(700, 500, (255, 0, 0)))  # Patrolling red flags.
         self.players[-1].patrol_between_tunnels = [0, 3]
         self.players[-1].last_visited_tunnel = 3
-        self.players.append(
-            AIPlayer(100, 500, (255, 255, 0))
-        )  # AI patrolling yellow flags.
+        self.players.append(AIPlayer(100, 500, (255, 255, 0)))  # Patrolling yel. flags.
         self.players[-1].patrol_between_tunnels = [6, 4]
         self.players[-1].last_visited_tunnel = 4
-        self.players.append(
-            AIPlayer(300, 500, (0, 255, 0))
-        )  # AI patrolling green flags.
+        self.players.append(AIPlayer(300, 500, (0, 255, 0)))  # Patrolling green flags.
         self.players[-1].patrol_between_tunnels = [10, 7]
         self.players[-1].last_visited_tunnel = 7
 
@@ -850,16 +835,14 @@ red flag to make the AI move between the red flags.",
             if self.debug_mode:
                 pygame.draw.line(
                     self.screen,
-                    (255,255,255),
+                    (255, 255, 255),
                     (
                         tunnel.start_x,
-                        tunnel.start_y
-                        - TUNNEL_HGT / 2,
+                        tunnel.start_y - TUNNEL_HGT / 2,
                     ),
                     (
                         tunnel.end_x,
-                        tunnel.end_y
-                        - TUNNEL_HGT / 2,
+                        tunnel.end_y - TUNNEL_HGT / 2,
                     ),
                     1,
                 )
