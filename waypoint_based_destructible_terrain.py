@@ -16,6 +16,8 @@ import pygame
 FPS: int = 36
 WINDOW_SIZE = (1000, 800)
 EARTH_COLOR = (200, 130, 110)  # Brownish color.
+LIGHT_EARTH_COLOR = (210, 140, 120)  # Lighter than EARTH_COLOR.
+DARK_EARTH_COLOR = (190, 120, 100)  # Lighter than EARTH_COLOR.
 TUNNEL_COLOR = (100, 30, 10)  # Should be darker than earth color.
 SPEED_WALKING: float = (
     2.0  # Determines how fast he player is walking/jumping to left or right.
@@ -205,7 +207,7 @@ class Player:
                 (int(self.x_position + x_position), int(self.y_position + y_position)),
             )[:3]
         ) in [
-            EARTH_COLOR,
+            EARTH_COLOR, LIGHT_EARTH_COLOR
         ]
 
     def apply_speed(self, game_state):
@@ -432,18 +434,20 @@ class Tunnel:
             else:
                 self.direction = TunnelDirection.LEFTUP
 
-    def draw(self, screen):
+    def draw(self, screen, color, offset):
         """Draws a dark brown tunnel to screen."""
         pygame.draw.circle(
             screen,
-            TUNNEL_COLOR,
-            (self.end_x, self.end_y - TUNNEL_HGT / 2),
+            color,
+            (self.end_x, self.end_y - TUNNEL_HGT / 2 + offset),
             TUNNEL_HGT / 2,
         )
+        self.start_y += offset
+        self.end_y += offset
         if self.direction == TunnelDirection.FLAT:
             pygame.draw.polygon(
                 screen,
-                TUNNEL_COLOR,
+                color,
                 (
                     (self.start_x, self.start_y),
                     (self.start_x, self.start_y - TUNNEL_HGT),
@@ -455,7 +459,7 @@ class Tunnel:
         elif self.direction == TunnelDirection.RIGHTUP:
             pygame.draw.polygon(
                 screen,
-                TUNNEL_COLOR,
+                color,
                 (
                     (
                         self.start_x + DEGREE_22_X,
@@ -479,7 +483,7 @@ class Tunnel:
         elif self.direction == TunnelDirection.RIGHTDOWN:
             pygame.draw.polygon(
                 screen,
-                TUNNEL_COLOR,
+                color,
                 (
                     (
                         self.start_x - DEGREE_22_X,
@@ -503,7 +507,7 @@ class Tunnel:
         elif self.direction == TunnelDirection.LEFTUP:
             pygame.draw.polygon(
                 screen,
-                TUNNEL_COLOR,
+                color,
                 (
                     (
                         self.start_x - DEGREE_22_X,
@@ -527,7 +531,7 @@ class Tunnel:
         elif self.direction == TunnelDirection.LEFTDOWN:
             pygame.draw.polygon(
                 screen,
-                TUNNEL_COLOR,
+                color,
                 (
                     (
                         self.start_x + DEGREE_45,
@@ -548,6 +552,8 @@ class Tunnel:
                 ),
                 0,
             )
+        self.start_y -= offset
+        self.end_y -= offset
 
 
 class HumanPlayer(Player):
@@ -833,8 +839,13 @@ red flag to make the AI move between the red flags.",
     def draw(self):
         """Drawing function for displaying earth, sky, tunnels, flags and players."""
         pygame.draw.rect(self.screen, EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 700))
+        pygame.draw.rect(self.screen, LIGHT_EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 6))
         for tunnel in self.tunnels:  # Using the design pattern "Iterator".
-            tunnel.draw(self.screen)
+            tunnel.draw(self.screen, DARK_EARTH_COLOR, -6)
+        for tunnel in self.tunnels:  # Using the design pattern "Iterator".
+            tunnel.draw(self.screen, LIGHT_EARTH_COLOR, 6)
+        for tunnel in self.tunnels:  # Using the design pattern "Iterator".
+            tunnel.draw(self.screen, TUNNEL_COLOR, 0)
         pygame.draw.rect(self.screen, (200, 220, 255), (0, 0, WINDOW_SIZE[0], 200))
         if self.debug_mode:
             for player in self.players:  # Using the design pattern "Iterator".
