@@ -98,44 +98,53 @@ class Player:
         self.patrol_between_tunnels = []
         self.last_visited_tunnel = 0
 
-    def command_start_digging(self, tunnels, waypoint_net):
+    def command_start_digging(self, game_state):
         """Jump to the left."""
         if self.action in (Action.WALKING, Action.DIGGING):
+            self.last_visited_tunnel = self.get_nearest_tunnel(game_state)
             self.action = Action.DIGGING
-            tunnels.append(
+            game_state.tunnels.append(
                 Tunnel(
                     self.x_position, self.y_position, self.x_position, self.y_position
                 )
             )
-            new_tunnel_id = len(tunnels) - 1
+            new_tunnel_id = len(game_state.tunnels) - 1
             # The new waypoint knows the last one.
-            waypoint_net[str(new_tunnel_id)] = [self.last_visited_tunnel]
+            game_state.waypoint_net[str(new_tunnel_id)] = [self.last_visited_tunnel]
             # The last waypoint knows the new one.
-            waypoint_net[str(self.last_visited_tunnel)].append(new_tunnel_id)
+            game_state.waypoint_net[str(self.last_visited_tunnel)].append(new_tunnel_id)
             # The player visits the new waypoint.
             self.last_visited_tunnel = new_tunnel_id
 
-    def command_stop_digging(self, tunnels, waypoint_net):
+    def get_nearest_tunnel(self, game_state):
+        """Gets a nearby tunnel. If none found, return last_visited_tunnel."""
+        return self.last_visited_tunnel
+
+    def command_stop_digging(self, game_state):
         """Not every time the player stops digging, this is called. Only if the player stops digging
         by using the corresponding key, this is called to make sure unneccesary tunnels get
         deleted."""
-        amount_of_tunnels = len(tunnels)
+        amount_of_tunnels = len(game_state.tunnels)
         if self.action == Action.DIGGING and amount_of_tunnels > 2:
             if (
-                tunnels[-1].start_x == tunnels[-1].end_x
+                game_state.tunnels[-1].start_x == game_state.tunnels[-1].end_x
             ):  # Check for tunnels with zero length.
-                tunnels = tunnels[:-1]  # Delete latest tunnel.
-                del waypoint_net[
+                game_state.tunnels = game_state.tunnels[:-1]  # Delete latest tunnel.
+                del game_state.waypoint_net[
                     str(amount_of_tunnels - 1)
                 ]  # Delete the two latest waypoints.
                 # Delete every reference to the new waypoint.
-                for key in waypoint_net:  # Using the design pattern "Iterator".
-                    if amount_of_tunnels - 1 in waypoint_net[key]:
-                        waypoint_net[key].remove(amount_of_tunnels - 1)
+                for (
+                    key
+                ) in game_state.waypoint_net:  # Using the design pattern "Iterator".
+                    if amount_of_tunnels - 1 in game_state.waypoint_net[key]:
+                        game_state.waypoint_net[key].remove(amount_of_tunnels - 1)
             else:
                 # Check if new connections are finished.
                 tunnel_id = 0
-                for tunnel in tunnels[:-2]:  # Using the design pattern "Iterator".
+                for tunnel in game_state.tunnels[
+                    :-2
+                ]:  # Using the design pattern "Iterator".
                     margin = TUNNEL_HGT
                     if (
                         tunnel.end_x - margin
@@ -146,10 +155,13 @@ class Player:
                         <= tunnel.end_y + margin
                     ):
                         # Combine the two waypoints close to each other.
-                        waypoint_net[str(tunnel_id)].append(amount_of_tunnels - 1)
-                        waypoint_net[str(amount_of_tunnels - 1)].append(tunnel_id)
+                        game_state.waypoint_net[str(tunnel_id)].append(
+                            amount_of_tunnels - 1
+                        )
+                        game_state.waypoint_net[str(amount_of_tunnels - 1)].append(
+                            tunnel_id
+                        )
                     tunnel_id += 1
-        return (tunnels, waypoint_net)
 
     def command_stop(self):
         """If the player is walking, stop him."""
@@ -277,12 +289,16 @@ class Player:
             if not self.is_there_solid_material(
                 game_state.screen, 0, 4
             ) and not self.is_there_solid_material(game_state.screen, 0, 1):
-                (
-                    game_state.tunnels,
-                    game_state.waypoint_net,
-                ) = self.command_stop_digging(
-                    game_state.tunnels, game_state.waypoint_net
-                )
+                if (
+                    self.y_speed > 0
+                ):  # Falling down while digging down? Open up tunnel even more.
+                    game_state.tunnels[self.last_visited_tunnel].end_x += (
+                        TUNNEL_HGT / 2 * self.x_speed
+                    )
+                    game_state.tunnels[self.last_visited_tunnel].end_y += (
+                        TUNNEL_HGT / 2 * self.y_speed
+                    )
+                self.command_stop_digging(game_state)
                 self.action = Action.FALLING
 
     def draw(self, screen):
@@ -567,18 +583,11 @@ class HumanPlayer(Player):
                 if (
                     event.key in (pygame.K_RCTRL, pygame.K_LCTRL)
                 ) and self.action == Action.WALKING:
-                    self.command_start_digging(
-                        game_state.tunnels, game_state.waypoint_net
-                    )
+                    self.command_start_digging(game_state)
                 elif (
                     event.key in (pygame.K_RCTRL, pygame.K_LCTRL)
                 ) and self.action == Action.DIGGING:
-                    (
-                        game_state.tunnels,
-                        game_state.waypoint_net,
-                    ) = self.command_stop_digging(
-                        game_state.tunnels, game_state.waypoint_net
-                    )
+                    self.command_stop_digging(game_state)
                     self.command_stop()
                 elif event.key == pygame.K_LEFT and self.action == Action.WALKING:
                     self.command_walk_left()
@@ -587,9 +596,7 @@ class HumanPlayer(Player):
                 elif (
                     event.key == pygame.K_RIGHT and self.action == Action.DIGGING
                 ):  # Digging to RIGHT.
-                    self.command_start_digging(
-                        game_state.tunnels, game_state.waypoint_net
-                    )
+                    self.command_start_digging(game_state)
                     game_state.tunnels[-1].direction = TunnelDirection.FLAT
                     self.direction = Direction.RIGHT
                     self.x_speed = SPEED_DIGGING
@@ -597,17 +604,13 @@ class HumanPlayer(Player):
                 elif (
                     event.key == pygame.K_LEFT and self.action == Action.DIGGING
                 ):  # Digging to LEFT.
-                    self.command_start_digging(
-                        game_state.tunnels, game_state.waypoint_net
-                    )
+                    self.command_start_digging(game_state)
                     game_state.tunnels[-1].direction = TunnelDirection.FLAT
                     self.direction = Direction.LEFT
                     self.x_speed = -SPEED_DIGGING
                     self.y_speed = 0
                 elif event.key == pygame.K_UP and self.action == Action.DIGGING:
-                    self.command_start_digging(
-                        game_state.tunnels, game_state.waypoint_net
-                    )
+                    self.command_start_digging(game_state)
                     if self.direction == Direction.RIGHT:  # Digging to RIGHT UP.
                         self.x_speed = SPEED_DIGGING
                         game_state.tunnels[-1].direction = TunnelDirection.RIGHTUP
@@ -616,9 +619,7 @@ class HumanPlayer(Player):
                         game_state.tunnels[-1].direction = TunnelDirection.LEFTUP
                     self.y_speed = -SPEED_DIGGING / 2
                 elif event.key == pygame.K_DOWN and self.action == Action.DIGGING:
-                    self.command_start_digging(
-                        game_state.tunnels, game_state.waypoint_net
-                    )
+                    self.command_start_digging(game_state)
                     if self.direction == Direction.RIGHT:  # Digging to RIGHT DOWN.
                         self.x_speed = SPEED_DIGGING
                         game_state.tunnels[-1].direction = TunnelDirection.RIGHTDOWN
@@ -938,15 +939,16 @@ def main():
     """The main function of the game that contains a endless loop."""
     game_state = GameState()
     while True:
+        game_state.clock.tick(FPS)  # Limit the game to a certain amount of FPS.
         for player in game_state.players:  # Using the design pattern "Iterator".
+            if isinstance(player, AIPlayer):  # Apply pathfinding only to AIs.
+                player.update(game_state)
             if isinstance(player, HumanPlayer):  # Applys input only to human players.
                 reset = player.control_events(game_state)
                 if reset:  # The reset needs to be called outside of control_events().
-                    game_state = GameState()
-            if isinstance(player, AIPlayer):  # Apply pathfinding only to AIs.
-                player.update(game_state)
+                    game_state = GameState()  # Reset all settings.
+                    break  # Without break it can happen that the next AI player uses old waypoints.
             player.apply_speed(game_state)  # Apply speed to the player.
-        game_state.clock.tick(FPS)  # Limit the game to a certain amount of FPS.
         game_state.draw()  # Drawing all objects in the techdemo.
 
 
