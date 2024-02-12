@@ -846,6 +846,23 @@ red flag to make the AI move between the red flags.",
             tunnel.draw(self.screen, LIGHT_EARTH_COLOR, 6)
         for tunnel in self.tunnels:  # Using the design pattern "Iterator".
             tunnel.draw(self.screen, TUNNEL_COLOR, 0)
+        for tunnel in self.tunnels:  # Using the design pattern "Iterator".
+            if self.debug_mode:
+                pygame.draw.line(
+                    self.screen,
+                    (255,255,255),
+                    (
+                        tunnel.start_x,
+                        tunnel.start_y
+                        - TUNNEL_HGT / 2,
+                    ),
+                    (
+                        tunnel.end_x,
+                        tunnel.end_y
+                        - TUNNEL_HGT / 2,
+                    ),
+                    1,
+                )
         pygame.draw.rect(self.screen, (200, 220, 255), (0, 0, WINDOW_SIZE[0], 200))
         if self.debug_mode:
             for player in self.players:  # Using the design pattern "Iterator".
@@ -866,7 +883,7 @@ red flag to make the AI move between the red flags.",
                                     self.tunnels[player.current_path[i + 1]].end_y
                                     - TUNNEL_HGT / 2,
                                 ),
-                                1,
+                                2,
                             )
             i = 0
             for tunnel in self.tunnels:  # Using the design pattern "Iterator".
