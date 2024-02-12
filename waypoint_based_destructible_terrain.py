@@ -819,7 +819,7 @@ red flag to make the AI move between the red flags.",
 
         # Place players.
         self.players = []
-        self.players.append(HumanPlayer(500, 300, (255, 100, 0)))  # Human player.
+        self.players.append(HumanPlayer(300, 300, (255, 100, 0)))  # Human player.
         self.players.append(AIPlayer(700, 500, (255, 0, 0)))  # AI patrolling red flags.
         self.players[-1].patrol_between_tunnels = [0, 3]
         self.players[-1].last_visited_tunnel = 3
