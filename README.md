@@ -6,7 +6,7 @@ Why? In the context of destructible two-dimensional (2D) landscapes, conventiona
 
 ## Preview
 
-TODO.mp4 or TODO.gif
+https://github.com/772/waypoint_based_destructible_terrain/assets/13351564/2e215245-0819-42ef-a44e-eef445ed8d73
 
 ## Build
 
