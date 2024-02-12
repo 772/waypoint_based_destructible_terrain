@@ -637,16 +637,11 @@ class HumanPlayer(Player):
                     event.key in (pygame.K_LEFT, pygame.K_RIGHT)
                 ) and self.action == Action.WALKING:
                     self.command_stop()
-                if event.key == pygame.K_LEFT and self.action == Action.DIGGING:
-                    self.x_speed = 0
-                    self.y_speed = 0
-                if event.key == pygame.K_RIGHT and self.action == Action.DIGGING:
-                    self.x_speed = 0
-                    self.y_speed = 0
-                if event.key == pygame.K_UP and self.action == Action.DIGGING:
-                    self.x_speed = 0
-                    self.y_speed = 0
-                if event.key == pygame.K_DOWN and self.action == Action.DIGGING:
+                if (
+                    event.key
+                    in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN)
+                    and self.action == Action.DIGGING
+                ):
                     self.x_speed = 0
                     self.y_speed = 0
 
