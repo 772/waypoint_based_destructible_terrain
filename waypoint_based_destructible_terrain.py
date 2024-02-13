@@ -429,6 +429,8 @@ class Tunnel:
             (self.end_x, self.end_y - TUNNEL_HGT / 2 + offset),
             TUNNEL_HGT / 2,
         )
+        if self.start_x == self.end_x:
+            return
         self.start_y += offset
         self.end_y += offset
         if self.direction == TunnelDirection.FLAT:
