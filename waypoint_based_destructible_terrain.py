@@ -14,10 +14,11 @@ import pygame
 
 # Constants.
 FPS: int = 36
-WINDOW_SIZE = (1000, 800)
+WORLD_SIZE = (1920, 1080)
+DEFAULT_WINDOW_SIZE = (1200, 820)
 EARTH_COLOR = (200, 130, 110)  # Brownish color.
-LIGHT_EARTH_COLOR = (210, 140, 120)  # Lighter than EARTH_COLOR.
-DARK_EARTH_COLOR = (190, 120, 100)  # Lighter than EARTH_COLOR.
+LIGHT_EARTH_COLOR = (220, 150, 130)  # Lighter than EARTH_COLOR.
+DARK_EARTH_COLOR = (180, 110, 90)  # Darker than EARTH_COLOR.
 TUNNEL_COLOR = (100, 30, 10)  # Should be darker than earth color.
 SPEED_WALKING: int = 2  # How fast the player is walking/jumping to left or right.
 SPEED_DIGGING: int = 1  # Should be lower than SPEED_WALKING.
@@ -297,13 +298,13 @@ class Player:
         if self.x_position < 10:
             self.x_position = 10
             self.action = Action.FALLING
-        elif self.x_position >= WINDOW_SIZE[0] - 10:
-            self.x_position = WINDOW_SIZE[0] - 11
+        elif self.x_position >= WORLD_SIZE[0] - 10:
+            self.x_position = WORLD_SIZE[0] - 11
             self.action = Action.FALLING
         if self.y_position < 0:
             self.y_position = 0
-        elif self.y_position >= WINDOW_SIZE[1]:
-            self.y_position = WINDOW_SIZE[1] - 1
+        elif self.y_position >= WORLD_SIZE[1]:
+            self.y_position = WORLD_SIZE[1] - 1
         # Is the player falling?
         if self.action == Action.FALLING:
             # Gravitation.
@@ -811,7 +812,7 @@ class GameState:
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("waypoint based destructible terrain")
-        self.screen = pygame.display.set_mode(WINDOW_SIZE)
+        self.screen = pygame.display.set_mode(DEFAULT_WINDOW_SIZE, pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
         self.debug_mode = False
         self.font_big = pygame.font.SysFont("Corbel", 35)
@@ -830,48 +831,46 @@ red flag to make the AI move between the red flags.",
         self.flags = []
         self.flags.append(Flag(100, 300, (255, 0, 0)))  # Red flag.
         self.flags.append(Flag(720, 500, (255, 0, 0)))  # Red flag.
-        self.flags.append(Flag(100, 500, (255, 255, 0)))  # Yellow flag.
-        self.flags.append(Flag(300, 700, (255, 255, 0)))  # Yellow flag.
-        self.flags.append(Flag(300, 500, (0, 255, 0)))  # Green flag.
-        self.flags.append(Flag(50, 700, (0, 255, 0)))  # Green flag.
+        self.flags.append(Flag(100, 600, (255, 255, 0)))  # Yellow flag.
+        self.flags.append(Flag(300, 800, (255, 255, 0)))  # Yellow flag.
+        self.flags.append(Flag(300, 600, (0, 255, 0)))  # Green flag.
+        self.flags.append(Flag(50, 800, (0, 255, 0)))  # Green flag.
+        self.flags.append(Flag(400, 600, (0, 255, 255)))  # Teal flag.
+        self.flags.append(Flag(400, 800, (0, 255, 255)))  # Teal flag.
+        self.flags.append(Flag(550, 600, (255, 255, 255)))  # White flag.
+        self.flags.append(Flag(550, 800, (255, 255, 255)))  # White flag.
 
         # Place some tunnels connecting the flags. Since the tunnels are placed manually, the
-        # waypoint net must be filled manually.
+        # waypoint net must be filled manually afterwards. When playing, there is no need for this.
         self.tunnels = []
-        self.tunnels.append(
-            Tunnel(100, 300, 100, 300)
-        )  # Tunnel at the red flags. ID = 0.
-        self.tunnels.append(
-            Tunnel(100, 300, 600, 300)
-        )  # Tunnel at the red flags. ID = 1.
-        self.tunnels.append(
-            Tunnel(680, 500, 680, 500)
-        )  # Tunnel at the red flags. ID = 2.
-        self.tunnels.append(
-            Tunnel(680, 500, 720, 500)
-        )  # Tunnel at the red flags. ID = 3.
-        self.tunnels.append(
-            Tunnel(100, 500, 100, 500)
-        )  # Tunnel for yellow flags. Top left. ID = 4.
-        self.tunnels.append(
-            Tunnel(100, 500, 200, 600)
-        )  # Tunnel for yellow flags. Middle. ID = 5.
-        self.tunnels.append(
-            Tunnel(200, 600, 300, 700)
-        )  # Tunnel for yellow flags. Bottom right. ID = 6.
-        self.tunnels.append(
-            Tunnel(300, 500, 300, 500)
-        )  # Tunnel for green flags. Top right. ID = 7.
-        self.tunnels.append(
-            Tunnel(300, 500, 200, 600)
-        )  # Tunnel for green flags. Middle. ID = 8.
-        self.tunnels.append(
-            Tunnel(200, 600, 100, 700)
-        )  # Tunnel for green flags. Bottom left. ID = 9.
-        self.tunnels.append(
-            Tunnel(100, 700, 50, 700)
-        )  # Tunnel for green flags. Bottom left. ID = 10.
-        # Waypoint net that knows which tunnels are connected.
+        # Tunnels for red flags.
+        self.tunnels.append(Tunnel(100, 300, 100, 300))  # ID = 0.
+        self.tunnels.append(Tunnel(100, 300, 600, 300))  # ID = 1.
+        self.tunnels.append(Tunnel(680, 500, 680, 500))  # ID = 2.
+        self.tunnels.append(Tunnel(680, 500, 720, 500))  # ID = 3.
+        # Tunnels for yellow flags.
+        self.tunnels.append(Tunnel(100, 600, 100, 600))  # ID = 4.
+        self.tunnels.append(Tunnel(100, 600, 200, 700))  # ID = 5.
+        self.tunnels.append(Tunnel(200, 700, 300, 800))  # ID = 6.
+        # Tunnels for green flags.
+        self.tunnels.append(Tunnel(300, 600, 300, 600))  # ID = 7.
+        self.tunnels.append(Tunnel(300, 600, 200, 700))  # ID = 8.
+        self.tunnels.append(Tunnel(200, 700, 100, 800))  # ID = 9.
+        self.tunnels.append(Tunnel(100, 800, 50, 800))  # ID = 10.
+        # Tunnels for teal flags.
+        self.tunnels.append(Tunnel(400, 600, 400, 600))  # ID = 11.
+        self.tunnels.append(Tunnel(400, 600, 450, 650))  # ID = 12.
+        self.tunnels.append(Tunnel(450, 650, 400, 700))  # ID = 13.
+        self.tunnels.append(Tunnel(400, 700, 450, 750))  # ID = 14.
+        self.tunnels.append(Tunnel(450, 750, 400, 800))  # ID = 15.
+        # Tunnels for white flags.
+        self.tunnels.append(Tunnel(550, 600, 550, 600))  # ID = 16.
+        self.tunnels.append(Tunnel(550, 600, 650, 600))  # ID = 17.
+        self.tunnels.append(Tunnel(650, 600, 550, 700))  # ID = 18.
+        self.tunnels.append(Tunnel(550, 700, 650, 700))  # ID = 19.
+        self.tunnels.append(Tunnel(650, 700, 550, 800))  # ID = 20.
+
+        # The waypoint net that knows which tunnels are connected.
         self.waypoint_net = {
             "0": {1},
             "1": {0},
@@ -884,6 +883,16 @@ red flag to make the AI move between the red flags.",
             "8": {4, 6, 7, 9},
             "9": {8, 10},
             "10": {9},
+            "11": {12},
+            "12": {11, 13},
+            "13": {12, 14},
+            "14": {13, 15},
+            "15": {14},
+            "16": {17},
+            "17": {16, 18},
+            "18": {17, 19},
+            "19": {18, 20},
+            "20": {19},
         }
 
         # Place players.
@@ -892,24 +901,32 @@ red flag to make the AI move between the red flags.",
         self.players.append(AIPlayer(700, 500, (255, 0, 0)))  # Patrolling red flags.
         self.players[-1].patrol_between_tunnels = [0, 3]
         self.players[-1].last_visited_tunnels = 3
-        self.players.append(AIPlayer(100, 500, (255, 255, 0)))  # Patrolling yel. flags.
+        self.players.append(AIPlayer(100, 600, (255, 255, 0)))  # Patrolling yel. flags.
         self.players[-1].patrol_between_tunnels = [6, 4]
         self.players[-1].last_visited_tunnels = 4
-        self.players.append(AIPlayer(300, 500, (0, 255, 0)))  # Patrolling green flags.
+        self.players.append(AIPlayer(300, 600, (0, 255, 0)))  # Patrolling green flags.
         self.players[-1].patrol_between_tunnels = [10, 7]
         self.players[-1].last_visited_tunnels = 7
+        self.players.append(AIPlayer(400, 600, (0, 255, 255)))  # Patrolling teal flags.
+        self.players[-1].patrol_between_tunnels = [15, 11]
+        self.players[-1].last_visited_tunnels = 11
+        self.players.append(AIPlayer(550, 600, (255, 255, 255)))  # Patrolling w. flags.
+        self.players[-1].patrol_between_tunnels = [20, 16]
+        self.players[-1].last_visited_tunnels = 16
 
     def draw(self):
         """Drawing function for displaying earth, sky, tunnels, flags and players."""
-        pygame.draw.rect(self.screen, EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 700))
+        pygame.draw.rect(
+            self.screen, EARTH_COLOR, (0, 200, WORLD_SIZE[0], WORLD_SIZE[1] - 200)
+        )
         for tunnel in self.tunnels:  # Using the design pattern "Iterator".
             tunnel.draw(self.screen, DARK_EARTH_COLOR, -6)
-        pygame.draw.rect(self.screen, LIGHT_EARTH_COLOR, (0, 200, WINDOW_SIZE[0], 6))
+        pygame.draw.rect(self.screen, LIGHT_EARTH_COLOR, (0, 200, WORLD_SIZE[0], 6))
         for tunnel in self.tunnels:  # Using the design pattern "Iterator".
             tunnel.draw(self.screen, LIGHT_EARTH_COLOR, 6)
         for tunnel in self.tunnels:  # Using the design pattern "Iterator".
             tunnel.draw(self.screen, TUNNEL_COLOR, 0)
-        pygame.draw.rect(self.screen, (200, 220, 255), (0, 0, WINDOW_SIZE[0], 200))
+        pygame.draw.rect(self.screen, (200, 220, 255), (0, 0, WORLD_SIZE[0], 200))
         if self.debug_mode:
             for player in self.players:  # Using the design pattern "Iterator".
                 if isinstance(player, AIPlayer):
