@@ -11,6 +11,7 @@ https://github.com/772/waypoint_based_destructible_terrain/assets/13351564/2e215
 ## Build
 
 ```
+git clone https://github.com/772/waypoint_based_destructible_terrain
 pip install pygame
-python waypoint_based_destructible_terrain.py
+python waypoint_based_destructible_terrain/waypoint_based_destructible_terrain.py
 ```
