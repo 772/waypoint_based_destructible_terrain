@@ -1,8 +1,11 @@
 import unittest
 from waypoint_based_destructible_terrain import *
+from player import *
 
 
 class Test(unittest.TestCase):
+    """This class contains all tests."""
+
     def test_weightless_breadth_first_search(self):
         graph = {}
         self.assertEqual(weightless_breadth_first_search(graph, 0, 0), [])
@@ -25,8 +28,8 @@ class Test(unittest.TestCase):
 
     def test_game_state_init(self):
         game_state = GameState()
-        self.assertEqual(len(game_state.flags), 6)
-        self.assertEqual(len(game_state.tunnels), 11)
+        self.assertEqual(len(game_state.flags), 10)
+        self.assertEqual(len(game_state.tunnels), 21)
 
     def test_game_state_draw(self):
         game_state = GameState()
