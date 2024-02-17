@@ -4,8 +4,6 @@ waypoint_based_destructible_terrain is a small techdemo showcasing an artificial
 
 Why? In the context of destructible two-dimensional (2D) landscapes, conventional methodologies involve the usage of either a vast grid comprising individual pixels (bitmap) or a polygon-based approach. Techniques such as marching squares or quadtrees are often employed to enhance these approaches. However, both approaches (bitmaps and polygons) encounter challenges when moving AI players within an unstable environment.
 
-## Preview
-
 https://github.com/772/waypoint_based_destructible_terrain/assets/13351564/241ac18c-6b9e-476c-b557-5d33b818c0ba
 
 ## Build
