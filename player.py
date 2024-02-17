@@ -1,5 +1,9 @@
 from waypoint_based_destructible_terrain import *
+from constants import *
 from enum import Enum, auto
+
+# Third-party libraries.
+import pygame
 
 
 class Action(Enum):
