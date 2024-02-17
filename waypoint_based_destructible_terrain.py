@@ -433,6 +433,7 @@ class GameState:
 
 
 def sign(x) -> int:
+    """Python and math have no standard function for sign()."""
     if x < 0:
         return -1
     else:
