@@ -206,6 +206,7 @@ class Tunnel:
 class GameState:
     """Contains all important infos about the game."""
 
+    __shared_state = {}
     screen: pygame.surface.Surface
     clock: pygame.time.Clock
     debug_mode: bool
@@ -221,6 +222,7 @@ class GameState:
     waypoint_net = dict
 
     def __init__(self):
+        self.__dict__ = self.__shared_state  # Using the design pattern "Borg". (Singleton variant).
         pygame.init()
         pygame.display.set_caption("waypoint based destructible terrain")
         self.screen = pygame.display.set_mode(DEFAULT_WINDOW_SIZE, pygame.RESIZABLE)
