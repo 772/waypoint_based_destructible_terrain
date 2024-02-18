@@ -133,20 +133,20 @@ class Tunnel:
                 color,
                 (
                     (
-                        self.start_x - DEGREE_22_X,
-                        self.start_y - TUNNEL_HGT / 2 + DEGREE_22_Y,
+                        self.start_x - DEGREE_45,
+                        self.start_y - TUNNEL_HGT / 2 + DEGREE_45,
                     ),
                     (
-                        self.start_x + DEGREE_22_X,
-                        self.start_y - TUNNEL_HGT / 2 - DEGREE_22_Y,
+                        self.start_x + DEGREE_45,
+                        self.start_y - TUNNEL_HGT / 2 - DEGREE_45,
                     ),
                     (
-                        self.end_x + DEGREE_22_X,
-                        self.end_y - TUNNEL_HGT / 2 - DEGREE_22_Y,
+                        self.end_x + DEGREE_45,
+                        self.end_y - TUNNEL_HGT / 2 - DEGREE_45,
                     ),
                     (
-                        self.end_x - DEGREE_22_X,
-                        self.end_y - TUNNEL_HGT / 2 + DEGREE_22_Y,
+                        self.end_x - DEGREE_45,
+                        self.end_y - TUNNEL_HGT / 2 + DEGREE_45,
                     ),
                 ),
                 0,
