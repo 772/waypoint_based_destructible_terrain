@@ -95,7 +95,8 @@ class Player:
         return self.last_visited_tunnels
 
     def find_two_nearby_tunnels(self, game_state):
-        """This function will give you the two tunnels a player is inbetween with."""
+        """This function will give you the two tunnels a player is inbetween with.
+        This is done by linear algebra: Is a point on a line?"""
         x = math.floor(self.x_position)
         y = math.floor(self.y_position)
         tunnel_id = 0
@@ -108,14 +109,13 @@ class Player:
                 y1 = math.floor(tunnel.start_y)
                 x2 = math.floor(tunnel.end_x)
                 y2 = math.floor(tunnel.end_y)
-                # The following six lines are very hacky. Could be better but requires lots of work!
-                y_offset = 8 if x2 < x1 else 6
+                # The following six lines are very hacky because of weird waypoint positions in diagonal tunnels.
+                y_offset = 8 if x2 < x1 else 6 # Also, diagonal tunnels to the left have a different offset than tunnels to the right.
                 a = math.fabs(x - x1)
                 b = math.fabs((y - y_offset) - y1)
                 c = math.fabs(x - x2)
                 d = math.fabs((y - y_offset) - y2)
-                erg = (a == b or a == (b - 2)) and (c == d or c == (d - 2))
-                if erg:
+                if (a == b or a == (b - 2)) and (c == d or c == (d - 2)):
                     hits.add(tunnel_id)
             tunnel_id += 1
 
@@ -155,11 +155,11 @@ class Player:
         for remove in removing:
             hits.remove(remove)
 
-        # If all tunnel ends were on only one side, we found nothing.
+        # If all "tunnel ends" are only on one side, we found nothing.
         if len(hits) < 2:
             return []
 
-        # Check if the tunnel ends are even connected by the waypoint_net.
+        # Check if the "tunnel ends" are even connected in the waypoint_net.
         hits_list = list(hits)
         if (
             hits_list[0] in game_state.waypoint_net[str(hits_list[1])]
@@ -276,6 +276,8 @@ class Player:
                 self.x_speed = 0
                 self.y_speed = 0
         if self.action == Action.WALKING:
+            # The player should not fall directly when walking downhill.
+            # This part of the code could also be done via a for loop.
             self.y_position = math.floor(self.y_position)
             if self.x_speed != 9990:  # eig 0
                 if not self.is_there_solid_material(game_state.screen, 0, 1):
