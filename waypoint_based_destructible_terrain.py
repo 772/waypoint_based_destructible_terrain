@@ -222,7 +222,9 @@ class GameState:
     waypoint_net = dict
 
     def __init__(self):
-        self.__dict__ = self.__shared_state  # Using the design pattern "Borg". (Singleton variant).
+        self.__dict__ = (
+            self.__shared_state
+        )  # Using the design pattern "Borg". (Singleton variant).
         pygame.init()
         pygame.display.set_caption("waypoint based destructible terrain")
         self.screen = pygame.display.set_mode(DEFAULT_WINDOW_SIZE, pygame.RESIZABLE)
@@ -384,7 +386,7 @@ class GameState:
                 BUTTON_DEBUG_HGT - 2,
             ),
         )
-        self.screen.blit(self.text, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y + 10))
+        self.screen.blit(self.text, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y + 5))
         self.screen.blit(self.text_goal, (BUTTON_DEBUG_X + 10, BUTTON_DEBUG_Y - 30))
         pygame.draw.rect(
             self.screen,
@@ -401,7 +403,7 @@ class GameState:
                 BUTTON_RESET_HGT - 2,
             ),
         )
-        self.screen.blit(self.text_reset, (BUTTON_RESET_X + 10, BUTTON_RESET_Y + 10))
+        self.screen.blit(self.text_reset, (BUTTON_RESET_X + 10, BUTTON_RESET_Y + 5))
         for flag in self.flags:  # Using the design pattern "Iterator".
             flag.draw(self.screen)
         for player in self.players:  # Using the design pattern "Iterator".
