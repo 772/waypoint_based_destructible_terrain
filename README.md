@@ -21,3 +21,4 @@ python waypoint_based_destructible_terrain/waypoint_based_destructible_terrain.p
 - Include different sliders for jump height and other variables?
 - Perfectly calculate the jump trajectory?
 - Make it extremely easy to port to other programming languages?
+- The example application could use a grid overlay, blue earth and white sky.
