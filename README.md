@@ -13,12 +13,3 @@ git clone https://github.com/772/waypoint_based_destructible_terrain
 pip install pygame
 python waypoint_based_destructible_terrain/waypoint_based_destructible_terrain.py
 ```
-
-## Ideas
-
-- Port the application to Rust and Wasm?
-- Add buttons for increasing and decreasing the number of players?
-- Include different sliders for jump height and other variables?
-- Perfectly calculate the jump trajectory?
-- Make it extremely easy to port to other programming languages?
-- The example application could use a grid overlay, blue earth and white sky.
