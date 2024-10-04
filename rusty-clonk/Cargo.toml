@@ -1,0 +1,16 @@
+[package]
+name = "rusty-clonk"
+version = "0.14.0"
+authors = ["Armin Schäfer"]
+readme = "README.md"
+edition = "2021"
+keywords = ["Indie"]
+
+[dependencies]
+bevy = "0.14.2"
+
+[profile.dev]
+opt-level = 0
+
+[profile.dev.package."*"]
+opt-level = 3
