@@ -1,2 +1,0 @@
-black .
-python test_waypoint_based_destructible_terrain.py

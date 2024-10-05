@@ -13,3 +13,7 @@ git clone https://github.com/772/waypoint_based_destructible_terrain
 pip install pygame
 python waypoint_based_destructible_terrain/waypoint_based_destructible_terrain.py
 ```
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, shall be licensed as GNU General Public License 3, without any additional terms or conditions.
