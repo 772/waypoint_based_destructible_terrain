@@ -44,25 +44,27 @@ fn main() {
 
 #[derive(Clone, Debug)]
 struct Floor {
-    x_left: f32,
-    y_left: f32,
-    hgt_left: f32,
-    x_right: f32,
-    y_right: f32,
-    hgt_right: f32,
+    top_left: Position2,
+    top_right: Position2,
+    bottom_right: Position2,
+    bottom_left: Position2,
     id_left_neighbor: Option<usize>,
     id_right_neighbor: Option<usize>,
 }
 
+#[derive(Debug, Clone)]
+pub struct Position2 {
+    pub x: f32,
+    pub y: f32,
+}
+
 impl Floor {
-    pub fn new(x_left: f32, y_left: f32, x_right: f32, y_right: f32) -> Floor {
+    pub fn new(x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, x4: f32, y4: f32) -> Floor {
         Floor {
-            x_left,
-            y_left,
-            hgt_left: HGT_TUNNEL,
-            x_right,
-            y_right,
-            hgt_right: HGT_TUNNEL,
+            top_left: Position2 { x: x1, y: y1 },
+            top_right: Position2 { x: x2, y: y2 },
+            bottom_right: Position2 { x: x3, y: y3 },
+            bottom_left: Position2 { x: x4, y: y4 },
             id_left_neighbor: None,
             id_right_neighbor: None,
         }
@@ -90,12 +92,66 @@ fn setup(
 
     // Tunnel.
     let mut floors: Vec<Floor> = vec![
-        Floor::new(-960.0, 100.0, -500.0, 100.0), // 0
-        Floor::new(-500.0, 100.0, -100.0, 0.0),   // 1
-        Floor::new(-100.0, 0.0, 0.0, 0.0),        // 2
-        Floor::new(0.0, 0.0, 300.0, 100.0),       // 3
-        Floor::new(300.0, 100.0, 800.0, -200.0),  // 4
-        Floor::new(800.0, -200.0, 960.0, -200.0),  // 5
+        Floor::new(
+            -960.0,
+            100.0 + HGT_TUNNEL,
+            -500.0,
+            100.0 + HGT_TUNNEL,
+            -500.0,
+            100.0,
+            -960.0,
+            100.0,
+        ),
+        Floor::new(
+            -500.0,
+            100.0 + HGT_TUNNEL,
+            -100.0,
+            0.0 + HGT_TUNNEL,
+            -100.0,
+            0.0,
+            -500.0,
+            100.0,
+        ),
+        Floor::new(
+            -100.0,
+            0.0 + HGT_TUNNEL,
+            0.0,
+            0.0 + HGT_TUNNEL,
+            0.0,
+            0.0,
+            -100.0,
+            0.0,
+        ),
+        Floor::new(
+            0.0,
+            0.0 + HGT_TUNNEL,
+            300.0,
+            100.0 + HGT_TUNNEL,
+            300.0,
+            100.0,
+            0.0,
+            0.0,
+        ),
+        Floor::new(
+            300.0,
+            100.0 + HGT_TUNNEL,
+            800.0,
+            -200.0 + HGT_TUNNEL,
+            800.0,
+            -200.0,
+            300.0,
+            100.0,
+        ),
+        Floor::new(
+            800.0,
+            -200.0 + HGT_TUNNEL,
+            960.0,
+            -200.0 + HGT_TUNNEL,
+            960.0,
+            -200.0,
+            800.0,
+            -200.0,
+        ),
     ];
     floors[0].id_right_neighbor = Some(1);
     floors[1].id_left_neighbor = Some(0);
@@ -111,14 +167,14 @@ fn setup(
     let mut shapes: Vec<Mesh2dHandle> = Vec::new();
     for floor in &floors {
         shapes.push(Mesh2dHandle(meshes.add(Triangle2d::new(
-            Vec2::new(floor.x_left, floor.y_left),
-            Vec2::new(floor.x_left, floor.y_left + floor.hgt_left),
-            Vec2::new(floor.x_right, floor.y_right),
+            Vec2::new(floor.bottom_left.x, floor.bottom_left.y),
+            Vec2::new(floor.top_left.x, floor.top_left.y),
+            Vec2::new(floor.bottom_right.x, floor.bottom_right.y),
         ))));
         shapes.push(Mesh2dHandle(meshes.add(Triangle2d::new(
-            Vec2::new(floor.x_left, floor.y_left + floor.hgt_left),
-            Vec2::new(floor.x_right, floor.y_right + floor.hgt_right),
-            Vec2::new(floor.x_right, floor.y_right),
+            Vec2::new(floor.top_left.x, floor.top_left.y),
+            Vec2::new(floor.top_right.x, floor.top_right.y),
+            Vec2::new(floor.bottom_right.x, floor.bottom_right.y),
         ))));
     }
     for (i, shape) in shapes.into_iter().enumerate() {
@@ -193,35 +249,40 @@ fn keyboard_control(
             || keyboard_input.pressed(KeyCode::ArrowRight)
             || keyboard_input.pressed(KeyCode::KeyD)
         {
-            if *action == Action::Walking
-            {
+            if *action == Action::Walking {
                 // Spielerposition (humanoid_transform) und Zielposition (current_floor)
                 let current_position_x = humanoid_transform.translation[0];
                 let current_position_y = humanoid_transform.translation[1];
-                let mut target_position_x = current_floor.0.clone().unwrap().x_left;
+                let mut target_position_x = current_floor.0.clone().unwrap().bottom_left.x;
                 let mut target_position_y =
-                    current_floor.0.clone().unwrap().y_left + HGT_HUMANOID / 2.0;
+                    current_floor.0.clone().unwrap().bottom_left.y + HGT_HUMANOID / 2.0;
                 if keyboard_input.pressed(KeyCode::ArrowRight)
                     || keyboard_input.pressed(KeyCode::KeyD)
                 {
                     *direction = Direction::Right;
-                    target_position_x = current_floor.0.clone().unwrap().x_right;
+                    target_position_x = current_floor.0.clone().unwrap().bottom_right.x;
                     target_position_y =
-                        current_floor.0.clone().unwrap().y_right + HGT_HUMANOID / 2.0;
-					// Left current floor?
-                    if current_position_x >= target_position_x && current_floor.0.clone().unwrap().id_right_neighbor.is_some() {
-						let new_id: usize = current_floor.0.clone().unwrap().id_right_neighbor.unwrap();
-						let neighbor: Floor = all_floors.0[new_id].clone();
-						*current_floor = CurrentFloor(Some(neighbor));
-					}
+                        current_floor.0.clone().unwrap().bottom_right.y + HGT_HUMANOID / 2.0;
+                    // Left current floor?
+                    if current_position_x >= target_position_x
+                        && current_floor.0.clone().unwrap().id_right_neighbor.is_some()
+                    {
+                        let new_id: usize =
+                            current_floor.0.clone().unwrap().id_right_neighbor.unwrap();
+                        let neighbor: Floor = all_floors.0[new_id].clone();
+                        *current_floor = CurrentFloor(Some(neighbor));
+                    }
                 } else {
                     *direction = Direction::Left;
-					// Left current floor?
-                    if current_position_x <= target_position_x && current_floor.0.clone().unwrap().id_left_neighbor.is_some() {
-						let new_id: usize = current_floor.0.clone().unwrap().id_left_neighbor.unwrap();
-						let neighbor: Floor = all_floors.0[new_id].clone();
-						*current_floor = CurrentFloor(Some(neighbor));
-					}
+                    // Left current floor?
+                    if current_position_x <= target_position_x
+                        && current_floor.0.clone().unwrap().id_left_neighbor.is_some()
+                    {
+                        let new_id: usize =
+                            current_floor.0.clone().unwrap().id_left_neighbor.unwrap();
+                        let neighbor: Floor = all_floors.0[new_id].clone();
+                        *current_floor = CurrentFloor(Some(neighbor));
+                    }
                 }
                 // Differenzvektor zwischen Spieler und Ziel
                 let diff_x = target_position_x - current_position_x;
@@ -241,7 +302,13 @@ fn keyboard_control(
                     humanoid_transform.translation[1] += movement_y;
                 }
             }
-			println!("x: {} y: {} action: {:?} Dir: {:?}", humanoid_transform.translation[0], humanoid_transform.translation[1], *action, *direction);
+            println!(
+                "x: {} y: {} action: {:?} Dir: {:?}",
+                humanoid_transform.translation[0],
+                humanoid_transform.translation[1],
+                *action,
+                *direction
+            );
         }
         if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
             if *action == Action::Walking {

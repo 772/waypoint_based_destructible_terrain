@@ -1,5 +1,5 @@
 [package]
-name = "rusty-clonk"
+name = "waypoint_based_destructible_terrain"
 version = "0.14.0"
 authors = ["Armin Schäfer"]
 readme = "README.md"
