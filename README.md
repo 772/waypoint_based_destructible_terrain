@@ -1,4 +1,4 @@
-# waypoint_based_destructible_terrain
+# waypoint_based_2d_destructible_terrain
 
 A waypoint net that is both used for AI player navigation and rendering a destructible terrain for 2D side-scrolling games. 
 
