@@ -1,37 +1,12 @@
-#![allow(
-    clippy::type_complexity,
-    clippy::too_many_arguments,
-    clippy::collapsible_if
-)]
-use bevy::sprite::{Wireframe2dConfig, Wireframe2dPlugin};
+#![allow(clippy::type_complexity, clippy::collapsible_if)]
+
+use bevy::sprite::Wireframe2dConfig;
+use bevy::sprite::Wireframe2dPlugin;
 use bevy::{
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
 };
-#[derive(Debug, Resource)]
-struct Floors(Vec<Floor>);
-#[derive(Component, Debug)]
-enum Direction {
-    Left,
-    Right,
-}
-#[derive(Component)]
-struct IsHumanoid;
-#[derive(Component)]
-struct ControledByPlayer;
-#[derive(Component, Debug, PartialEq)]
-enum Action {
-    Walking,
-    Falling,
-    Digging,
-}
-#[derive(Component)]
-struct CurrentFloor(Option<Floor>);
-
-const HGT_TUNNEL: f32 = 60.0;
-const HGT_HUMANOID: f32 = 40.0;
-const SPEED_WALKING: f32 = 3.0;
-const SPEED_DIGGING: f32 = 2.0;
+use waypoint_based_2d_destructible_terrain::*;
 
 fn main() {
     let mut app = App::new();
@@ -40,35 +15,6 @@ fn main() {
     app.add_systems(Update, keyboard_control);
     app.insert_resource(Floors(Vec::new()));
     app.run();
-}
-
-#[derive(Clone, Debug)]
-struct Floor {
-    top_left: Position2,
-    top_right: Position2,
-    bottom_right: Position2,
-    bottom_left: Position2,
-    id_left_neighbor: Option<usize>,
-    id_right_neighbor: Option<usize>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Position2 {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Floor {
-    pub fn new(x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32, x4: f32, y4: f32) -> Floor {
-        Floor {
-            top_left: Position2 { x: x1, y: y1 },
-            top_right: Position2 { x: x2, y: y2 },
-            bottom_right: Position2 { x: x3, y: y3 },
-            bottom_left: Position2 { x: x4, y: y4 },
-            id_left_neighbor: None,
-            id_right_neighbor: None,
-        }
-    }
 }
 
 fn setup(
@@ -212,7 +158,7 @@ fn setup(
         },
         IsHumanoid,
         Action::Walking,
-        Direction::Left,
+        GazeDirection::Left,
         CurrentFloor(Some(floors[2].clone())),
     ));
     commands.spawn((
@@ -224,7 +170,7 @@ fn setup(
         IsHumanoid,
         ControledByPlayer,
         Action::Walking,
-        Direction::Left,
+        GazeDirection::Left,
         CurrentFloor(Some(floors[2].clone())),
     ));
 }
@@ -237,13 +183,13 @@ fn keyboard_control(
             &mut Transform,
             &mut Action,
             &mut CurrentFloor,
-            &mut Direction,
+            &mut GazeDirection,
         ),
         (With<IsHumanoid>, With<ControledByPlayer>),
     >,
     mut wireframe_config: ResMut<Wireframe2dConfig>,
 ) {
-    for (mut humanoid_transform, mut action, mut current_floor, mut direction) in &mut humanoids {
+    for (mut humanoid_transform, action, mut current_floor, mut direction) in &mut humanoids {
         if keyboard_input.pressed(KeyCode::ArrowLeft)
             || keyboard_input.pressed(KeyCode::KeyA)
             || keyboard_input.pressed(KeyCode::ArrowRight)
@@ -259,7 +205,7 @@ fn keyboard_control(
                 if keyboard_input.pressed(KeyCode::ArrowRight)
                     || keyboard_input.pressed(KeyCode::KeyD)
                 {
-                    *direction = Direction::Right;
+                    *direction = GazeDirection::Right;
                     target_position_x = current_floor.0.clone().unwrap().bottom_right.x;
                     target_position_y =
                         current_floor.0.clone().unwrap().bottom_right.y + HGT_HUMANOID / 2.0;
@@ -273,7 +219,7 @@ fn keyboard_control(
                         *current_floor = CurrentFloor(Some(neighbor));
                     }
                 } else {
-                    *direction = Direction::Left;
+                    *direction = GazeDirection::Left;
                     // Left current floor?
                     if current_position_x <= target_position_x
                         && current_floor.0.clone().unwrap().id_left_neighbor.is_some()
