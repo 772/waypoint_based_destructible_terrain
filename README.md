@@ -4,7 +4,9 @@ A waypoint net that is both used for AI player navigation and rendering a destru
 
 Why? In the context of destructible two-dimensional (2D) landscapes, conventional approaches involve the usage of either a vast grid comprising individual pixels (bitmap) or a polygon-based approach. Advanced techniques such as marching squares or quadtrees are often employed to enhance these approaches. However, both approaches (bitmaps and polygons) encounter big challenges when moving AI players within an unstable environment. Waypoints are usually only used in games with static landscapes.
 
-## Wasm
+Open https://772.github.io/waypoint_based_destructible_terrain/.
+
+## How to update and run the wasm files locally
 
 ```
 cargo build --target wasm32-unknown-unknown --release
@@ -12,7 +14,7 @@ wasm-bindgen --no-typescript --target web --out-dir ./ --out-name "waypoint_base
 python3 -m http.server 8000
 ```
 
-Open http://localhost:8000/
+Open http://localhost:8000/.
 
 ## Legacy Python PoC
 
