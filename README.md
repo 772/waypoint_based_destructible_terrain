@@ -6,15 +6,13 @@ Why? In the context of destructible two-dimensional (2D) landscapes, conventiona
 
 Open https://772.github.io/waypoint_based_destructible_terrain/.
 
-## How to update and run the wasm files locally
+## How to update the wasm in this repository
 
 ```
 cargo build --target wasm32-unknown-unknown --release
 wasm-bindgen --no-typescript --target web --out-dir ./ --out-name "waypoint_based_2d_destructible_terrain" ./target/wasm32-unknown-unknown/release/waypoint_based_2d_destructible_terrain.wasm
-python3 -m http.server 8000
+git add waypoint_based_2d_destructible_terrain_bg.wasm waypoint_based_2d_destructible_terrain.js && git commit -m "Update" && git push
 ```
-
-Open http://localhost:8000/.
 
 ## Legacy Python PoC
 
