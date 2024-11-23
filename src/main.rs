@@ -38,23 +38,13 @@ fn setup(
     // Tunnel.
     let mut floors: Vec<Floor> = vec![
         Floor::new(
-            -960.0,
-            100.0 + HGT_TUNNEL,
-            -500.0,
-            100.0 + HGT_TUNNEL,
-            -500.0,
-            100.0,
-            -960.0,
-            100.0,
-        ),
-        Floor::new(
-            -500.0,
+            -640.0,
             100.0 + HGT_TUNNEL,
             -100.0,
             0.0 + HGT_TUNNEL,
             -100.0,
             0.0,
-            -500.0,
+            -640.0,
             100.0,
         ),
         Floor::new(
@@ -80,22 +70,12 @@ fn setup(
         Floor::new(
             300.0,
             100.0 + HGT_TUNNEL,
-            800.0,
+            640.0,
             -200.0 + HGT_TUNNEL,
-            800.0,
+            640.0,
             -200.0,
             300.0,
             100.0,
-        ),
-        Floor::new(
-            800.0,
-            -200.0 + HGT_TUNNEL,
-            960.0,
-            -200.0 + HGT_TUNNEL,
-            960.0,
-            -200.0,
-            800.0,
-            -200.0,
         ),
     ];
     floors[0].id_right_neighbor = Some(1);
@@ -104,10 +84,6 @@ fn setup(
     floors[2].id_left_neighbor = Some(1);
     floors[2].id_right_neighbor = Some(3);
     floors[3].id_left_neighbor = Some(2);
-    floors[3].id_right_neighbor = Some(4);
-    floors[4].id_left_neighbor = Some(3);
-    floors[4].id_right_neighbor = Some(5);
-    floors[5].id_left_neighbor = Some(4);
     *all_floors = Floors(floors.clone());
     let mut shapes = Vec::new();
     for floor in &floors {
@@ -191,7 +167,6 @@ fn keyboard_control(
             || keyboard_input.pressed(KeyCode::KeyD)
         {
             if *action == Action::Walking {
-                // Spielerposition (humanoid_transform) und Zielposition (current_floor)
                 let current_position_x = humanoid_transform.translation[0];
                 let current_position_y = humanoid_transform.translation[1];
                 let mut target_position_x = current_floor.0.clone().unwrap().bottom_left.x;
@@ -225,22 +200,19 @@ fn keyboard_control(
                         *current_floor = CurrentFloor(Some(neighbor));
                     }
                 }
-                // Differenzvektor zwischen Spieler und Ziel
                 let diff_x = target_position_x - current_position_x;
                 let diff_y = target_position_y - current_position_y;
-                // Berechne die Länge (Magnitude) des Vektors
                 let distance = (diff_x * diff_x + diff_y * diff_y).sqrt();
-                // Überprüfe, ob die Distanz größer als ein sehr kleiner Wert ist (um NaN und Nulldivision zu verhindern)
-                if distance > 0.0 {
-                    // Normiere den Differenzvektor (damit die Länge des Vektors 1 beträgt)
+                if distance > SPEED_WALKING {
                     let dir_x = diff_x / distance;
                     let dir_y = diff_y / distance;
-                    // Bewegung in Richtung Ziel multipliziert mit der Geschwindigkeit
                     let movement_x = dir_x * SPEED_WALKING;
                     let movement_y = dir_y * SPEED_WALKING;
-                    // Aktualisiere die Spielerposition
                     humanoid_transform.translation[0] += movement_x;
                     humanoid_transform.translation[1] += movement_y;
+                } else {
+                    humanoid_transform.translation[0] = target_position_x;
+                    humanoid_transform.translation[1] = target_position_y;
                 }
             }
             println!(
