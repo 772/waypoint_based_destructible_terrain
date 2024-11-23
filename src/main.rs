@@ -1,11 +1,8 @@
 #![allow(clippy::type_complexity, clippy::collapsible_if)]
 
+use bevy::prelude::*;
 use bevy::sprite::Wireframe2dConfig;
 use bevy::sprite::Wireframe2dPlugin;
-use bevy::{
-    prelude::*,
-    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
-};
 use waypoint_based_2d_destructible_terrain::*;
 
 fn main() {
@@ -25,16 +22,18 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     // Camera.
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Background.
     let texture_earth = asset_server.load("texture_earth.png");
-    commands.spawn(SpriteBundle {
-        texture: texture_earth.clone(),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        global_transform: GlobalTransform::from_xyz(0.0, 0.0, 0.0),
-        ..default()
-    });
+    commands.spawn((
+        Sprite {
+            image: texture_earth.clone(),
+            ..default()
+        },
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        GlobalTransform::from_xyz(0.0, 0.0, 0.0),
+    ));
 
     // Tunnel.
     let mut floors: Vec<Floor> = vec![
@@ -110,63 +109,59 @@ fn setup(
     floors[4].id_right_neighbor = Some(5);
     floors[5].id_left_neighbor = Some(4);
     *all_floors = Floors(floors.clone());
-    let mut shapes: Vec<Mesh2dHandle> = Vec::new();
+    let mut shapes = Vec::new();
     for floor in &floors {
-        shapes.push(Mesh2dHandle(meshes.add(Triangle2d::new(
+        shapes.push(meshes.add(Triangle2d::new(
             Vec2::new(floor.bottom_left.x, floor.bottom_left.y),
             Vec2::new(floor.top_left.x, floor.top_left.y),
             Vec2::new(floor.bottom_right.x, floor.bottom_right.y),
-        ))));
-        shapes.push(Mesh2dHandle(meshes.add(Triangle2d::new(
+        )));
+        shapes.push(meshes.add(Triangle2d::new(
             Vec2::new(floor.top_left.x, floor.top_left.y),
             Vec2::new(floor.top_right.x, floor.top_right.y),
             Vec2::new(floor.bottom_right.x, floor.bottom_right.y),
-        ))));
+        )));
     }
     for (i, shape) in shapes.into_iter().enumerate() {
         let color = Color::srgba(0.0, 0.0, 0.0, 0.7);
-        commands.spawn(MaterialMesh2dBundle {
-            mesh: shape,
-            material: materials.add(color),
-            transform: Transform::from_xyz(0.0, 0.0, 0.1 + 0.001 * (i as f32)),
-            global_transform: GlobalTransform::from_xyz(0.0, 0.0, i as f32),
-            ..default()
-        });
+        commands.spawn((
+            Mesh2d(shape),
+            MeshMaterial2d(materials.add(color)),
+            Transform::from_xyz(0.0, 0.0, 0.1 + 0.001 * (i as f32)),
+            GlobalTransform::from_xyz(0.0, 0.0, i as f32),
+        ));
     }
 
     // HUD.
-    commands.spawn(
-        TextBundle::from_section(
-            "Press space to toggle wireframes. Left / right arrow key to move player.",
-            TextStyle::default(),
-        )
-        .with_style(Style {
+    commands.spawn((
+        Text::new("Press space to toggle wireframes. Left / right arrow key to move player."),
+        Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.0),
             left: Val::Px(12.0),
             ..default()
-        }),
-    );
+        },
+    ));
 
     // Humanoids.
     let texture_player = asset_server.load("player.png");
     commands.spawn((
-        SpriteBundle {
-            texture: texture_player.clone(),
-            transform: Transform::from_xyz(-50.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
+        Sprite {
+            image: texture_player.clone(),
             ..default()
         },
+        Transform::from_xyz(-50.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
         IsHumanoid,
         Action::Walking,
         GazeDirection::Left,
         CurrentFloor(Some(floors[2].clone())),
     ));
     commands.spawn((
-        SpriteBundle {
-            texture: texture_player.clone(),
-            transform: Transform::from_xyz(0.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
+        Sprite {
+            image: texture_player.clone(),
             ..default()
         },
+        Transform::from_xyz(0.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
         IsHumanoid,
         ControledByPlayer,
         Action::Walking,
