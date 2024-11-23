@@ -11,7 +11,7 @@ Open https://772.github.io/waypoint_based_destructible_terrain/.
 ```
 cargo build --target wasm32-unknown-unknown --release
 wasm-bindgen --no-typescript --target web --out-dir ./ --out-name "waypoint_based_2d_destructible_terrain" ./target/wasm32-unknown-unknown/release/waypoint_based_2d_destructible_terrain.wasm
-git add waypoint_based_2d_destructible_terrain_bg.wasm waypoint_based_2d_destructible_terrain.js && git commit -m "Update" && git push
+git add -A && git commit -m "Update wasm." && git push
 ```
 
 ## Legacy Python PoC
