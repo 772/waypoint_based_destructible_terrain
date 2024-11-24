@@ -3,7 +3,8 @@
 use bevy::prelude::*;
 use bevy::sprite::Wireframe2dConfig;
 use bevy::sprite::Wireframe2dPlugin;
-use waypoint_based_2d_destructible_terrain::*;
+use std::time::{SystemTime, UNIX_EPOCH};
+use waypoint_based_destructible_terrain::*;
 
 fn main() {
     let mut app = App::new();
@@ -110,7 +111,7 @@ fn setup(
 
     // HUD.
     commands.spawn((
-        Text::new("Press space to toggle wireframes. Left / right arrow key to move player."),
+        Text::new("Reload for new map. Press space to toggle wireframes. Left / right / up arrow key to move player.\nHGT_HUMANOID = ".to_owned() + &HGT_HUMANOID.to_string() + "\nHGT_JUMP = " + &HGT_JUMP.to_string() + "\nSPEED_WALKING = " + &SPEED_WALKING.to_string() + "\nAdd more AI humanoids with key [1]"),
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.0),
@@ -128,6 +129,7 @@ fn setup(
         },
         Transform::from_xyz(-50.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
         IsHumanoid,
+        ControledByAI,
         Action::Walking,
         GazeDirection::Left,
         CurrentFloor(Some(floors[2].clone())),
@@ -149,6 +151,8 @@ fn setup(
 fn keyboard_control(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     all_floors: ResMut<Floors>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut humanoids: Query<
         (
             &mut Transform,
@@ -156,8 +160,9 @@ fn keyboard_control(
             &mut CurrentFloor,
             &mut GazeDirection,
         ),
-        (With<IsHumanoid>, With<ControledByPlayer>),
+        (With<ControledByPlayer>, Without<ControledByAI>),
     >,
+    mut _ai_players: Query<(&mut Transform,), (With<ControledByAI>, Without<ControledByPlayer>)>,
     mut wireframe_config: ResMut<Wireframe2dConfig>,
 ) {
     for (mut humanoid_transform, action, mut current_floor, mut direction) in &mut humanoids {
@@ -247,6 +252,26 @@ fn keyboard_control(
         }
         if keyboard_input.just_pressed(KeyCode::Space) {
             wireframe_config.global = !wireframe_config.global;
+        }
+        if keyboard_input.just_pressed(KeyCode::Digit1) {
+            let random_number = (SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                % 51) as f32;
+            let texture_player = asset_server.load("player.png");
+            commands.spawn((
+                Sprite {
+                    image: texture_player.clone(),
+                    ..default()
+                },
+                Transform::from_xyz(-50.0 + random_number, 0.0 + HGT_HUMANOID / 2.0, 1.0),
+                IsHumanoid,
+                ControledByAI,
+                Action::Walking,
+                GazeDirection::Left,
+                CurrentFloor(Some(all_floors.0[2].clone())),
+            ));
         }
     }
 }
