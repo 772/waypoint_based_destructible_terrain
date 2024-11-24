@@ -112,7 +112,7 @@ fn setup(
 
     // HUD.
     commands.spawn((
-        Text::new("Reload for new map. Press space to toggle wireframes. Arrow keys to move the player.\nHGT_HUMANOID = ".to_owned() + &HGT_HUMANOID.to_string() + "\nHGT_JUMP_PARABOLA = " + &HGT_JUMP_PARABOLA.to_string() + "\nWDT_JUMP_PARABOLA = " + &WDT_JUMP_PARABOLA.to_string() + "\nSPEED_WALKING = " + &SPEED_WALKING.to_string() + "\nAdd more AI humanoids with key [1]"),
+        Text::new("Press space to toggle wireframes. Arrow keys to move the player.\nHGT_HUMANOID = ".to_owned() + &HGT_HUMANOID.to_string() + "\nHGT_JUMP_PARABOLA = " + &HGT_JUMP_PARABOLA.to_string() + "\nWDT_JUMP_PARABOLA = " + &WDT_JUMP_PARABOLA.to_string() + "\nSPEED_WALKING = " + &SPEED_WALKING.to_string() + "\nAdd more AI humanoids with key [1]"),
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.0),
