@@ -3,7 +3,6 @@
 use bevy::prelude::*;
 use bevy::sprite::Wireframe2dConfig;
 use bevy::sprite::Wireframe2dPlugin;
-use std::time::{SystemTime, UNIX_EPOCH};
 use waypoint_based_destructible_terrain::*;
 
 fn main() {
@@ -11,6 +10,8 @@ fn main() {
     app.add_plugins((DefaultPlugins, Wireframe2dPlugin))
         .add_systems(Startup, setup);
     app.add_systems(Update, keyboard_control);
+    app.add_systems(Update, mass_mover);
+    app.add_systems(Update, control_ai);
     app.insert_resource(Floors(Vec::new()));
     app.run();
 }
@@ -111,7 +112,7 @@ fn setup(
 
     // HUD.
     commands.spawn((
-        Text::new("Reload for new map. Press space to toggle wireframes. Left / right / up arrow key to move player.\nHGT_HUMANOID = ".to_owned() + &HGT_HUMANOID.to_string() + "\nHGT_JUMP = " + &HGT_JUMP.to_string() + "\nSPEED_WALKING = " + &SPEED_WALKING.to_string() + "\nAdd more AI humanoids with key [1]"),
+        Text::new("Reload for new map. Press space to toggle wireframes. Arrow keys to move the player.\nHGT_HUMANOID = ".to_owned() + &HGT_HUMANOID.to_string() + "\nHGT_JUMP_PARABOLA = " + &HGT_JUMP_PARABOLA.to_string() + "\nWDT_JUMP_PARABOLA = " + &WDT_JUMP_PARABOLA.to_string() + "\nSPEED_WALKING = " + &SPEED_WALKING.to_string() + "\nAdd more AI humanoids with key [1]"),
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.0),
@@ -128,9 +129,11 @@ fn setup(
             ..default()
         },
         Transform::from_xyz(-50.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
-        IsHumanoid,
+        Humanoid {
+            current_path: Vec::new(),
+        },
         ControledByAI,
-        Action::Walking,
+        Action::Idle,
         GazeDirection::Left,
         CurrentFloor(Some(floors[2].clone())),
     ));
@@ -140,9 +143,11 @@ fn setup(
             ..default()
         },
         Transform::from_xyz(0.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
-        IsHumanoid,
+        Humanoid {
+            current_path: Vec::new(),
+        },
         ControledByPlayer,
-        Action::Walking,
+        Action::Idle,
         GazeDirection::Left,
         CurrentFloor(Some(floors[2].clone())),
     ));
@@ -155,9 +160,7 @@ fn keyboard_control(
     asset_server: Res<AssetServer>,
     mut humanoids: Query<
         (
-            &mut Transform,
             &mut Action,
-            &mut CurrentFloor,
             &mut GazeDirection,
         ),
         (With<ControledByPlayer>, Without<ControledByAI>),
@@ -165,71 +168,31 @@ fn keyboard_control(
     mut _ai_players: Query<(&mut Transform,), (With<ControledByAI>, Without<ControledByPlayer>)>,
     mut wireframe_config: ResMut<Wireframe2dConfig>,
 ) {
-    for (mut humanoid_transform, action, mut current_floor, mut direction) in &mut humanoids {
+    for (mut action, mut direction) in &mut humanoids {
         if keyboard_input.pressed(KeyCode::ArrowLeft)
             || keyboard_input.pressed(KeyCode::KeyA)
             || keyboard_input.pressed(KeyCode::ArrowRight)
             || keyboard_input.pressed(KeyCode::KeyD)
+            || keyboard_input.pressed(KeyCode::ArrowDown)
+            || keyboard_input.pressed(KeyCode::KeyS)
         {
-            if *action == Action::Walking {
-                let current_position_x = humanoid_transform.translation[0];
-                let current_position_y = humanoid_transform.translation[1];
-                let mut target_position_x = current_floor.0.clone().unwrap().bottom_left.x;
-                let mut target_position_y =
-                    current_floor.0.clone().unwrap().bottom_left.y + HGT_HUMANOID / 2.0;
-                if keyboard_input.pressed(KeyCode::ArrowRight)
-                    || keyboard_input.pressed(KeyCode::KeyD)
-                {
-                    *direction = GazeDirection::Right;
-                    target_position_x = current_floor.0.clone().unwrap().bottom_right.x;
-                    target_position_y =
-                        current_floor.0.clone().unwrap().bottom_right.y + HGT_HUMANOID / 2.0;
-                    // Left current floor?
-                    if current_position_x >= target_position_x
-                        && current_floor.0.clone().unwrap().id_right_neighbor.is_some()
-                    {
-                        let new_id: usize =
-                            current_floor.0.clone().unwrap().id_right_neighbor.unwrap();
-                        let neighbor: Floor = all_floors.0[new_id].clone();
-                        *current_floor = CurrentFloor(Some(neighbor));
-                    }
-                } else {
-                    *direction = GazeDirection::Left;
-                    // Left current floor?
-                    if current_position_x <= target_position_x
-                        && current_floor.0.clone().unwrap().id_left_neighbor.is_some()
-                    {
-                        let new_id: usize =
-                            current_floor.0.clone().unwrap().id_left_neighbor.unwrap();
-                        let neighbor: Floor = all_floors.0[new_id].clone();
-                        *current_floor = CurrentFloor(Some(neighbor));
-                    }
-                }
-                let diff_x = target_position_x - current_position_x;
-                let diff_y = target_position_y - current_position_y;
-                let distance = (diff_x * diff_x + diff_y * diff_y).sqrt();
-                if distance > SPEED_WALKING {
-                    let dir_x = diff_x / distance;
-                    let dir_y = diff_y / distance;
-                    let movement_x = dir_x * SPEED_WALKING;
-                    let movement_y = dir_y * SPEED_WALKING;
-                    humanoid_transform.translation[0] += movement_x;
-                    humanoid_transform.translation[1] += movement_y;
-                } else {
-                    humanoid_transform.translation[0] = target_position_x;
-                    humanoid_transform.translation[1] = target_position_y;
-                }
+            if keyboard_input.pressed(KeyCode::ArrowRight) || keyboard_input.pressed(KeyCode::KeyD)
+            {
+                *action = Action::WalkingRight;
+                *direction = GazeDirection::Right;
+            } else if keyboard_input.pressed(KeyCode::ArrowLeft)
+                || keyboard_input.pressed(KeyCode::KeyA)
+            {
+                *action = Action::WalkingLeft;
+                *direction = GazeDirection::Left;
+            } else if keyboard_input.pressed(KeyCode::ArrowDown)
+                || keyboard_input.pressed(KeyCode::KeyS)
+            {
+                *action = Action::Idle;
             }
-            println!(
-                "x: {} y: {} action: {:?} Dir: {:?}",
-                humanoid_transform.translation[0],
-                humanoid_transform.translation[1],
-                *action,
-                *direction
-            );
         }
         if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
-            if *action == Action::Walking {
+            if *action == Action::Idle {
                 //*action = Action::Falling;
             }
             if *action == Action::Digging {
@@ -244,7 +207,7 @@ fn keyboard_control(
         if keyboard_input.pressed(KeyCode::ControlLeft)
             || keyboard_input.pressed(KeyCode::ControlRight)
         {
-            if *action == Action::Walking {
+            if *action == Action::Idle {
                 //*action = Action::Digging;
             } else if *action == Action::Digging {
                 //*action = Action::Walking;
@@ -254,21 +217,18 @@ fn keyboard_control(
             wireframe_config.global = !wireframe_config.global;
         }
         if keyboard_input.just_pressed(KeyCode::Digit1) {
-            let random_number = (SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                % 51) as f32;
             let texture_player = asset_server.load("player.png");
             commands.spawn((
                 Sprite {
                     image: texture_player.clone(),
                     ..default()
                 },
-                Transform::from_xyz(-50.0 + random_number, 0.0 + HGT_HUMANOID / 2.0, 1.0),
-                IsHumanoid,
+                Transform::from_xyz(-50.0, 0.0 + HGT_HUMANOID / 2.0, 1.0),
+                Humanoid {
+                    current_path: Vec::new(),
+                },
                 ControledByAI,
-                Action::Walking,
+                Action::Idle,
                 GazeDirection::Left,
                 CurrentFloor(Some(all_floors.0[2].clone())),
             ));

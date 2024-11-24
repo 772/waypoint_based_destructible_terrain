@@ -4,13 +4,12 @@ use bevy::prelude::*;
 use std::collections::{HashMap, VecDeque};
 
 pub const HGT_HUMANOID: f32 = 40.0;
-pub const HGT_JUMP: f32 = 3.0;
+pub const HGT_JUMP_PARABOLA: f32 = 50.0;
+pub const WDT_JUMP_PARABOLA: f32 = 60.0;
 pub const SPEED_WALKING: f32 = 3.0;
 pub const HGT_TUNNEL: f32 = 60.0;
 #[derive(Debug, Resource)]
 pub struct Floors(pub Vec<Floor>);
-#[derive(Component)]
-pub struct IsHumanoid;
 #[derive(Component)]
 pub struct ControledByPlayer;
 #[derive(Component)]
@@ -18,7 +17,7 @@ pub struct ControledByAI;
 #[derive(Component)]
 pub struct CurrentFloor(pub Option<Floor>);
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, PartialEq)]
 pub enum GazeDirection {
     Left,
     Right,
@@ -26,9 +25,22 @@ pub enum GazeDirection {
 
 #[derive(Component, Debug, PartialEq)]
 pub enum Action {
-    Walking,
+    Idle,
+    WalkingLeft,
+    WalkingRight,
     _Falling,
     Digging,
+}
+
+#[derive(Component)]
+pub struct Humanoid {
+    pub current_path: Vec<usize>,
+}
+
+#[derive(Clone, Debug)]
+pub struct JumpRoute {
+    pub id_target: usize,
+    pub x_jump_start_position: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -39,7 +51,7 @@ pub struct Floor {
     pub bottom_left: Position2,
     pub id_left_neighbor: Option<usize>,
     pub id_right_neighbor: Option<usize>,
-    pub id_jump_to_neighbor: Vec<usize>,
+    pub id_jump_to_neighbor: Vec<JumpRoute>,
 }
 
 #[derive(Debug, Clone)]
@@ -60,50 +72,108 @@ impl Floor {
             id_jump_to_neighbor: Vec::new(),
         }
     }
+}
 
-    pub fn find_path_to_another_floor(self, goal: usize) -> Option<Vec<usize>> {
-        let mut path = Vec::new();
-        if self.id_left_neighbor == Some(goal)
-            || self.id_right_neighbor == Some(goal)
-            || self.id_jump_to_neighbor.contains(&goal)
-        {
-            path.push(goal);
+pub fn control_ai(
+    mut humanoids: Query<&mut Action, With<ControledByAI>>,
+) {
+    for mut action in &mut humanoids {
+        if *action == Action::Idle {
+            *action = Action::WalkingLeft;
         }
-        if path.is_empty() {
-            return None;
+    }
+}
+
+pub fn mass_mover(
+    mut humanoids: Query<
+        (
+            &mut Transform,
+            &mut Action,
+            &mut CurrentFloor,
+            &mut GazeDirection,
+        ),
+        With<Humanoid>,
+    >,
+    all_floors: ResMut<Floors>,
+) {
+    // Walking.
+    for (mut humanoid_transform, mut action, mut current_floor, mut gaze_direction) in
+        &mut humanoids
+    {
+        let target_position_x;
+        let target_position_y;
+        if *action == Action::WalkingLeft {
+            target_position_x = current_floor.0.clone().unwrap().bottom_left.x;
+            target_position_y = current_floor.0.clone().unwrap().bottom_left.y + HGT_HUMANOID / 2.0;
+        } else if *action == Action::WalkingRight {
+            target_position_x = current_floor.0.clone().unwrap().bottom_right.x;
+            target_position_y =
+                current_floor.0.clone().unwrap().bottom_right.y + HGT_HUMANOID / 2.0;
+        } else {
+            continue;
         }
-        Some(path)
+        let current_position_x = humanoid_transform.translation[0];
+        let current_position_y = humanoid_transform.translation[1];
+        let diff_x = target_position_x - current_position_x;
+        let diff_y = target_position_y - current_position_y;
+        let distance = (diff_x * diff_x + diff_y * diff_y).sqrt();
+        if distance > SPEED_WALKING {
+            let dir_x = diff_x / distance;
+            let dir_y = diff_y / distance;
+            let movement_x = dir_x * SPEED_WALKING;
+            let movement_y = dir_y * SPEED_WALKING;
+            humanoid_transform.translation[0] += movement_x;
+            humanoid_transform.translation[1] += movement_y;
+        } else {
+            humanoid_transform.translation[0] = target_position_x;
+            humanoid_transform.translation[1] = target_position_y;
+            if *gaze_direction == GazeDirection::Left {
+                if current_floor.0.clone().unwrap().id_left_neighbor.is_some() {
+                    *current_floor = CurrentFloor(Some(
+                        all_floors.0[current_floor.0.clone().unwrap().id_left_neighbor.unwrap()]
+                            .clone(),
+                    ));
+                } else {
+                    *action = Action::WalkingRight;
+                    *gaze_direction = GazeDirection::Right;
+                }
+            } else {
+                if current_floor.0.clone().unwrap().id_right_neighbor.is_some() {
+                    *current_floor = CurrentFloor(Some(
+                        all_floors.0[current_floor.0.clone().unwrap().id_right_neighbor.unwrap()]
+                            .clone(),
+                    ));
+                } else {
+                    *action = Action::WalkingLeft;
+                    *gaze_direction = GazeDirection::Left;
+                }
+            }
+        }
     }
 }
 
 pub fn weightless_breadth_first_search(
-    graph: &HashMap<String, Vec<String>>,
-    start: &str,
-    end: &str,
-) -> Option<Vec<String>> {
-    let mut queue: VecDeque<Vec<String>> = VecDeque::new();
-    let mut visited: Vec<String> = Vec::new();
-
+    graph: &HashMap<usize, Vec<usize>>,
+    start: usize,
+    end: usize,
+) -> Option<Vec<usize>> {
+    let mut queue: VecDeque<Vec<usize>> = VecDeque::new();
+    let mut visited: Vec<usize> = Vec::new();
     if start == end {
         return Some(vec![]);
     }
-
-    // Die erste Pfadliste mit dem Startknoten initialisieren.
-    queue.push_back(vec![start.to_string()]);
-
+    queue.push_back(vec![start]);
     while let Some(path) = queue.pop_front() {
-        let node = path.last().unwrap(); // Letztes Element des aktuellen Pfads.
-
+        let node = path.last().unwrap();
         if !visited.contains(node) {
-            // Alle mit dem aktuellen Knoten verbundenen Knoten iterieren.
             if let Some(connected_nodes) = graph.get(node) {
                 for connected_node in connected_nodes {
                     let mut next_path = path.clone();
-                    next_path.push(connected_node.to_string());
+                    next_path.push(*connected_node);
                     queue.push_back(next_path.clone());
 
-                    if connected_node == end {
-                        return Some(next_path); // Rückgabe des Pfads, wenn das Ziel gefunden wurde.
+                    if *connected_node == end {
+                        return Some(next_path);
                     }
                 }
             }
