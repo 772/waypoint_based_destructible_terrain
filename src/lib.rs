@@ -17,6 +17,18 @@ pub struct ControledByAI;
 #[derive(Component)]
 pub struct CurrentFloor(pub Option<Floor>);
 
+pub fn jump_function(x: f32) -> f32 {
+    -(4.0 * HGT_JUMP_PARABOLA) / (WDT_JUMP_PARABOLA.powf(2.0)) * x.powf(2.0) + HGT_JUMP_PARABOLA
+}
+
+pub fn fall_function(x: f32) -> f32 {
+    -(4.0 * HGT_JUMP_PARABOLA) / (WDT_JUMP_PARABOLA.powf(2.0)) * x.powf(2.0) + HGT_JUMP_PARABOLA
+}
+
+pub fn dig_fall_function(x: f32) -> f32 {
+    -(4.0 * HGT_JUMP_PARABOLA) / (WDT_JUMP_PARABOLA.powf(2.0)) * x.powf(2.0) + HGT_JUMP_PARABOLA
+}
+
 #[derive(Component, Debug, PartialEq)]
 pub enum GazeDirection {
     Left,
@@ -43,18 +55,21 @@ pub struct JumpRoute {
     pub x_jump_start_position: f32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Floor {
     pub top_left: Position2,
     pub top_right: Position2,
     pub bottom_right: Position2,
     pub bottom_left: Position2,
-    pub id_left_neighbor: Option<usize>,
-    pub id_right_neighbor: Option<usize>,
-    pub id_jump_to_neighbor: Vec<JumpRoute>,
+    pub id_left_walking_neighbor: Option<usize>,
+    pub id_right_walking_neighbor: Option<usize>,
+    pub id_left_digging_neighbor: Option<usize>,
+    pub id_right_digging_neighbor: Option<usize>,
+    pub id_jump_neighbor: Vec<JumpRoute>,
+    pub id_all: Vec<usize>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Position2 {
     pub x: f32,
     pub y: f32,
@@ -67,16 +82,12 @@ impl Floor {
             top_right: Position2 { x: x2, y: y2 },
             bottom_right: Position2 { x: x3, y: y3 },
             bottom_left: Position2 { x: x4, y: y4 },
-            id_left_neighbor: None,
-            id_right_neighbor: None,
-            id_jump_to_neighbor: Vec::new(),
+            ..default()
         }
     }
 }
 
-pub fn control_ai(
-    mut humanoids: Query<&mut Action, With<ControledByAI>>,
-) {
+pub fn control_ai(mut humanoids: Query<&mut Action, With<ControledByAI>>) {
     for mut action in &mut humanoids {
         if *action == Action::Idle {
             *action = Action::WalkingLeft;
@@ -128,20 +139,42 @@ pub fn mass_mover(
             humanoid_transform.translation[0] = target_position_x;
             humanoid_transform.translation[1] = target_position_y;
             if *gaze_direction == GazeDirection::Left {
-                if current_floor.0.clone().unwrap().id_left_neighbor.is_some() {
+                if current_floor
+                    .0
+                    .clone()
+                    .unwrap()
+                    .id_left_walking_neighbor
+                    .is_some()
+                {
                     *current_floor = CurrentFloor(Some(
-                        all_floors.0[current_floor.0.clone().unwrap().id_left_neighbor.unwrap()]
-                            .clone(),
+                        all_floors.0[current_floor
+                            .0
+                            .clone()
+                            .unwrap()
+                            .id_left_walking_neighbor
+                            .unwrap()]
+                        .clone(),
                     ));
                 } else {
                     *action = Action::WalkingRight;
                     *gaze_direction = GazeDirection::Right;
                 }
             } else {
-                if current_floor.0.clone().unwrap().id_right_neighbor.is_some() {
+                if current_floor
+                    .0
+                    .clone()
+                    .unwrap()
+                    .id_right_walking_neighbor
+                    .is_some()
+                {
                     *current_floor = CurrentFloor(Some(
-                        all_floors.0[current_floor.0.clone().unwrap().id_right_neighbor.unwrap()]
-                            .clone(),
+                        all_floors.0[current_floor
+                            .0
+                            .clone()
+                            .unwrap()
+                            .id_right_walking_neighbor
+                            .unwrap()]
+                        .clone(),
                     ));
                 } else {
                     *action = Action::WalkingLeft;

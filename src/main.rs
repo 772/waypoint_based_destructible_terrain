@@ -80,12 +80,12 @@ fn setup(
             100.0,
         ),
     ];
-    floors[0].id_right_neighbor = Some(1);
-    floors[1].id_left_neighbor = Some(0);
-    floors[1].id_right_neighbor = Some(2);
-    floors[2].id_left_neighbor = Some(1);
-    floors[2].id_right_neighbor = Some(3);
-    floors[3].id_left_neighbor = Some(2);
+    floors[0].id_right_walking_neighbor = Some(1);
+    floors[1].id_left_walking_neighbor = Some(0);
+    floors[1].id_right_walking_neighbor = Some(2);
+    floors[2].id_left_walking_neighbor = Some(1);
+    floors[2].id_right_walking_neighbor = Some(3);
+    floors[3].id_left_walking_neighbor = Some(2);
     *all_floors = Floors(floors.clone());
     let mut shapes = Vec::new();
     for floor in &floors {
@@ -112,7 +112,18 @@ fn setup(
 
     // HUD.
     commands.spawn((
-        Text::new("Press space to toggle wireframes. Arrow keys to move the player.\nHGT_HUMANOID = ".to_owned() + &HGT_HUMANOID.to_string() + "\nHGT_JUMP_PARABOLA = " + &HGT_JUMP_PARABOLA.to_string() + "\nWDT_JUMP_PARABOLA = " + &WDT_JUMP_PARABOLA.to_string() + "\nSPEED_WALKING = " + &SPEED_WALKING.to_string() + "\nAdd more AI humanoids with key [1]"),
+        Text::new(
+            "Press space to toggle wireframes. Arrow keys to move the player.\nHGT_HUMANOID = "
+                .to_owned()
+                + &HGT_HUMANOID.to_string()
+                + "\nHGT_JUMP_PARABOLA = "
+                + &HGT_JUMP_PARABOLA.to_string()
+                + "\nWDT_JUMP_PARABOLA = "
+                + &WDT_JUMP_PARABOLA.to_string()
+                + "\nSPEED_WALKING = "
+                + &SPEED_WALKING.to_string()
+                + "\nAdd more AI humanoids with key [1]",
+        ),
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.0),
@@ -159,10 +170,7 @@ fn keyboard_control(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut humanoids: Query<
-        (
-            &mut Action,
-            &mut GazeDirection,
-        ),
+        (&mut Action, &mut GazeDirection),
         (With<ControledByPlayer>, Without<ControledByAI>),
     >,
     mut _ai_players: Query<(&mut Transform,), (With<ControledByAI>, Without<ControledByPlayer>)>,

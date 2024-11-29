@@ -8,6 +8,7 @@ Open https://772.github.io/waypoint_based_destructible_terrain/ to test an examp
 
 ## Features
 
+- AI friendly landscape.
 - Pixel perfect precision without bitmap.
 - Only one dependency: bevy.
 - Less than 1000 lines of safe Rust code.
