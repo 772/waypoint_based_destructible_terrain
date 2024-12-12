@@ -159,27 +159,25 @@ pub fn mass_mover(
                     *action = Action::WalkingRight;
                     *gaze_direction = GazeDirection::Right;
                 }
+            } else if current_floor
+                .0
+                .clone()
+                .unwrap()
+                .id_right_walking_neighbor
+                .is_some()
+            {
+                *current_floor = CurrentFloor(Some(
+                    all_floors.0[current_floor
+                        .0
+                        .clone()
+                        .unwrap()
+                        .id_right_walking_neighbor
+                        .unwrap()]
+                    .clone(),
+                ));
             } else {
-                if current_floor
-                    .0
-                    .clone()
-                    .unwrap()
-                    .id_right_walking_neighbor
-                    .is_some()
-                {
-                    *current_floor = CurrentFloor(Some(
-                        all_floors.0[current_floor
-                            .0
-                            .clone()
-                            .unwrap()
-                            .id_right_walking_neighbor
-                            .unwrap()]
-                        .clone(),
-                    ));
-                } else {
-                    *action = Action::WalkingLeft;
-                    *gaze_direction = GazeDirection::Left;
-                }
+                *action = Action::WalkingLeft;
+                *gaze_direction = GazeDirection::Left;
             }
         }
     }
@@ -210,7 +208,7 @@ pub fn weightless_breadth_first_search(
                     }
                 }
             }
-            visited.push(node.clone());
+            visited.push(*node);
         }
     }
     None

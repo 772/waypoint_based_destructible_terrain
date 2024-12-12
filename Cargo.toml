@@ -7,7 +7,7 @@ edition = "2021"
 keywords = ["Indie"]
 
 [dependencies]
-bevy = "0.15.0"
+bevy = { git = "https://github.com/bevyengine/bevy.git", rev = "116c2b02fe8a7589d1777af7dabd84dc756b5b0d" } # Online for debug.
 
 [profile.dev]
 opt-level = 0
