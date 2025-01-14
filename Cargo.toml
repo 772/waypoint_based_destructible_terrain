@@ -1,13 +1,13 @@
 [package]
 name = "waypoint_based_destructible_terrain"
-version = "0.15.0"
+version = "0.15.1"
 authors = ["Armin Schäfer"]
 readme = "README.md"
 edition = "2021"
 keywords = ["Indie"]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy.git" }
+bevy = { git = "https://github.com/bevyengine/bevy.git", rev = "47d25c13d73962005eff78884774f807618d8420" } # Online for debug.
 
 [profile.dev]
 opt-level = 0
