@@ -20,11 +20,15 @@ pub fn dig_fall_function(x: f32) -> f32 {
     -(4.0 * HGT_JUMP_PARABOLA) / (WDT_JUMP_PARABOLA.powf(2.0)) * x.powf(2.0) + HGT_JUMP_PARABOLA
 }
 
-/*
-fn main() {
-	let mut list = Vec::new();
+//fn main() {
+//    debug();
+//}
+
+fn debug() {
+    let mut list: Vec<Floor> = Vec::new();
+    list.push(Floor::default());
+    println!("{:#?}", list);
 }
-*/
 
 #[derive(Clone, Debug)]
 pub struct JumpRoute {
