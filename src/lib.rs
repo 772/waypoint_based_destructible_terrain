@@ -1,5 +1,3 @@
-#![allow(clippy::too_many_arguments)]
-
 use std::collections::{HashMap, VecDeque};
 
 pub const HGT_HUMANOID: f32 = 40.0;
@@ -16,6 +14,13 @@ pub fn fall_function(x: f32) -> f32 {
     -(4.0 * HGT_JUMP_PARABOLA) / (WDT_JUMP_PARABOLA.powf(2.0)) * x.powf(2.0) + HGT_JUMP_PARABOLA
 }
 
+#[derive(Debug)]
+struct Map {
+    horizontal_lines: Vec<(f32, Vec<(f32, f32)>)>,
+    baroque_diagonal_lines: Vec<(f32, Vec<(f32, f32)>)>,
+    sinister_diagonal_lines: Vec<(f32, Vec<(f32, f32)>)>,
+}
+
 pub fn dig_fall_function(x: f32) -> f32 {
     -(4.0 * HGT_JUMP_PARABOLA) / (WDT_JUMP_PARABOLA.powf(2.0)) * x.powf(2.0) + HGT_JUMP_PARABOLA
 }
@@ -25,9 +30,12 @@ pub fn dig_fall_function(x: f32) -> f32 {
 //}
 
 fn debug() {
-    let mut list: Vec<Floor> = Vec::new();
-    list.push(Floor::default());
-    println!("{:#?}", list);
+    let map = Map {
+        horizontal_lines: Vec::new(),
+        baroque_diagonal_lines: Vec::new(),
+        sinister_diagonal_lines: Vec::new(),
+    };
+    println!("{:#?}", map);
 }
 
 #[derive(Clone, Debug)]
