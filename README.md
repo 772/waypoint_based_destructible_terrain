@@ -2,7 +2,7 @@
 
 A waypoint net that is both used for AI player navigation and rendering a destructible terrain for 2D side-scrolling games. 
 
-Why? In the context of destructible two-dimensional (2D) landscapes, conventional approaches involve the usage of either a vast grid comprising individual pixels (bitmap) or a polygon-based approach. Advanced techniques such as marching squares or quadtrees are often employed to enhance these approaches. However, both approaches (bitmaps and polygons) encounter big challenges when moving AI players within an unstable environment. Waypoints are usually only used in games with static landscapes.
+Why? In the context of destructible two-dimensional (2D) landscapes, conventional approaches involve the usage of either a vast grid comprising individual pixels (bitmap) or a polygon-based approach. Both approaches (bitmaps and polygons) encounter big challenges when moving AI players within an unstable environment because waypoints are usually only used in games with static landscapes. This project here uses a very limited but easy polygon-based approach that is optimized for waypoint usage. The data structure consist of three large vectors that contain all horizontal and diagonal free spaces in the environment. All free spaces have the same height, but can be stacked on each other and overlap.
 
 Open https://772.github.io/waypoint_based_destructible_terrain/ to test an example.
 
@@ -10,12 +10,14 @@ Open https://772.github.io/waypoint_based_destructible_terrain/ to test an examp
 
 - AI friendly landscape.
 - Pixel perfect precision without bitmap.
-- Only one dependency: bevy.
 - Less than 1000 lines of safe Rust code.
 - 100% free. Forever and always.
-- Open Source under GPLv3.
 
 ![Example](example.png)
+
+## Downsides
+
+- Transparent materials are hard to implement.
 
 ## How to update the wasm in this repository
 
