@@ -10,7 +10,7 @@ Open https://772.github.io/waypoint_based_destructible_terrain/ to test an examp
 
 - AI friendly landscape.
 - Pixel perfect precision without bitmap.
-- Less than 1000 lines of safe Rust code.
+- No Featuritis: Less than 1000 lines of safe Rust code.
 - 100% free. Forever and always.
 
 ![Example](example.png)
@@ -25,6 +25,13 @@ Open https://772.github.io/waypoint_based_destructible_terrain/ to test an examp
 cargo build --target wasm32-unknown-unknown --release
 wasm-bindgen --no-typescript --target web --out-dir ./ --out-name "waypoint_based_destructible_terrain" ./target/wasm32-unknown-unknown/release/waypoint_based_destructible_terrain.wasm
 git add -A && git commit -m "Update wasm." && git push
+```
+
+If you haven`t used wasm so far, use this first:
+
+```
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli
 ```
 
 ## Contribution

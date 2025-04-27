@@ -1,8 +1,7 @@
 #![allow(clippy::type_complexity, clippy::collapsible_if)]
 
 use bevy::prelude::*;
-use bevy::sprite::Wireframe2dConfig;
-use bevy::sprite::Wireframe2dPlugin;
+use bevy::sprite::{Wireframe2dConfig, Wireframe2dPlugin};
 use waypoint_based_destructible_terrain::*;
 
 #[derive(Component)]
@@ -16,8 +15,8 @@ pub struct Floors(pub Vec<Floor>);
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins((DefaultPlugins, Wireframe2dPlugin))
-        .add_systems(Startup, setup);
+    app.add_plugins((DefaultPlugins, Wireframe2dPlugin::default()))
+    .add_systems(Startup, setup);
     app.add_systems(Update, keyboard_control);
     app.add_systems(Update, mass_mover);
     app.add_systems(Update, control_ai);
