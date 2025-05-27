@@ -8,6 +8,7 @@ keywords = ["Indie"]
 
 [dependencies]
 bevy = "0.16.0"
+rand = "0.9.1"
 
 [profile.dev]
 opt-level = 0

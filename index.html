@@ -1,15 +1,18 @@
 <!doctype html>
 <html lang="en">
-<body style="margin: 0px;">
-  <script type="module">
-    import init from './waypoint_based_destructible_terrain.js'
+    <body style="margin: 0px">
+        <script type="module">
+            import init from "./waypoint_based_destructible_terrain.js";
 
-    init().catch((error) => {
-      if (!error.message.startsWith("Using exceptions for control flow, don't mind me. This isn't actually an error!")) {
-        throw error;
-      }
-    });
-  </script>
-<p><b>Warning</b>: This project is currently in an experimental stage. Pressing space will crash the wasm build. <a href="https://github.com/772/waypoint_based_destructible_terrain">Link to git repository</a>.</p>
-</body>
+            init().catch((error) => {
+                if (
+                    !error.message.startsWith(
+                        "Using exceptions for control flow, don't mind me. This isn't actually an error!",
+                    )
+                ) {
+                    throw error;
+                }
+            });
+        </script>
+    </body>
 </html>
