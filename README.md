@@ -1,3 +1,5 @@
+__Because less is more.__
+
 # waypoint_based_destructible_terrain
 
 A waypoint net that is both used for AI player navigation and rendering a destructible terrain for 2D side-scrolling games.
@@ -6,28 +8,47 @@ Why? In the context of destructible two-dimensional (2D) landscapes, conventiona
 
 Open https://772.github.io/waypoint_based_destructible_terrain/ to test an example.
 
-## Features
+The whole data is stored in this simple struct:
 
-- Less is more: Even tho there is only a limited amount of lines, this fact gives structure (Stronghold) and keeps the optical illusion of completely destructable landscapes. Also: Only using this kind of pattern is very **AI friendly**.
-- Very simple collision detection: Compared to a trapezoid map / trapezoid decomposition, which would need some kind of sectors or QuadTrees to be performant, this technique is very easy to implement.
+```
+pub struct Map {
+    horizontal_lines: Vec<[f32; 3]>,        // [y, x, length].
+    baroque_diagonal_lines: Vec<[f32; 3]>,  // [y, x, length].
+    sinister_diagonal_lines: Vec<[f32; 3]>, // [y, x, length].
+}
+```
+
+## Info
+
+- Even tho there is only a limited amount of lines, this fact gives structure (Stronghold) and keeps the optical illusion of completely destructable landscapes. Also: Only using this kind of pattern is very **AI friendly**.
+- Very simple distance-based collision detection.
 
 ![Example](example.png)
 
-## How to update the wasm in this repository
+## How to update the wasm branch in this repository
+
+Note that after the WebAssembly branch was initially created, I deleted all files in it.
 
 ```
-cargo build --target wasm32-unknown-unknown --release
-wasm-bindgen --no-typescript --target web --out-dir ./ --out-name "waypoint_based_destructible_terrain" ./target/wasm32-unknown-unknown/release/waypoint_based_destructible_terrain.wasm
-git add -A && git commit -m "Update wasm." && git push
-```
-
-If you haven`t used wasm so far, use this first:
-
-```
+cargo b
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli
+git add -A && git commit -m "Update."
+git push
+cargo build --target wasm32-unknown-unknown --release
+wasm-bindgen --no-typescript --target web --out-dir ./../ --out-name "wasm" ./target/wasm32-unknown-unknown/release/*.wasm
+cp index.html ..
+cp example.md ..
+cp assets .. -r
+git checkout wasm
+rm assets -R
+mv ../index.html .
+mv ../example.md .
+mv ../wasm.js .
+mv ../wasm_bg.wasm .
+mv ../assets .
+git add wasm.js wasm_bg.wasm index.html example.md assets
+git commit -m "Update wasm files."
+git push -f
+git checkout main
 ```
-
-## Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, shall be licensed as GNU General Public License 3, without any additional terms or conditions.

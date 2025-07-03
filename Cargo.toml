@@ -7,8 +7,8 @@ edition = "2021"
 keywords = ["Indie"]
 
 [dependencies]
-bevy = "0.16.0"
-rand = "0.9.1"
+bevy = "0.16"
+rand = "0.9"
 
 [profile.dev]
 opt-level = 0
